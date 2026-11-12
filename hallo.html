@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<!-- Das ist unsere Startseite. GitHub Pages zeigt automatisch die Datei "index.html" an. -->
+<html lang="de">
+<head>
+  <!-- Damit Umlaute wie ä, ö, ü richtig angezeigt werden -->
+  <meta charset="UTF-8">
+  <!-- Damit die Seite auch auf dem Handy gut aussieht -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Dieser Titel steht oben im Browser-Tab -->
+  <title>Megaphone</title>
+  <!-- Hier holen wir unsere Stil-Datei, damit die Seite schön aussieht -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Alles im "body" sieht man auf der Seite -->
+Hallo
+
+  <!-- Hier kann man seinen Namen eintragen -->
+  <div class="name-eingabe">
+    <input type="text" id="name" placeholder="Dein Name">
+    <button onclick="sagHallo()">Los!</button>
+  </div>
+
+  <!-- Hier erscheint "Hallo" und der Name -->
+  <h1 id="begruessung"></h1>
+
+  <script>
+    // Diese Funktion wird ausgeführt, wenn man auf "Los!" klickt
+    function sagHallo() {
+      // Den Namen aus dem Eingabefeld holen
+      const name = document.getElementById("name").value;
+      // "Hallo" und den Namen auf die Seite schreiben
+      document.getElementById("begruessung").textContent = "Hallo " + name;
+    }
+
+    // Damit es auch mit der Enter-Taste funktioniert
+    document.getElementById("name").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        sagHallo();
+      }
+    });
+  </script>
+</body>
+</html>

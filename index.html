@@ -13,32 +13,37 @@
 </head>
 <body>
   <!-- Alles im "body" sieht man auf der Seite -->
+  <h1>Unsere Hunde</h1>
 
+  <!-- Die Liste mit allen Hunde-Profilen -->
+  <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern -->
+  <ul class="profile">
 
-  <!-- Hier kann man seinen Namen eintragen -->
-  <div class="name-eingabe">
-    <input type="text" id="name" placeholder="Dein Name">
-    <button onclick="sagHallo()">Los!</button>
-  </div>
+    <li class="profil">
+      <img src="bilder/bello.jpg" alt="Foto von Bello">
+      <span class="hundename">Bello</span>
+    </li>
 
-  <!-- Hier erscheint "Hallo" und der Name -->
-  <h1 id="begruessung"></h1>
+    <li class="profil">
+      <img src="bilder/luna.jpg" alt="Foto von Luna">
+      <span class="hundename">Luna</span>
+    </li>
 
-  <script>
-    // Diese Funktion wird ausgeführt, wenn man auf "Los!" klickt
-    function sagHallo() {
-      // Den Namen aus dem Eingabefeld holen
-      const name = document.getElementById("name").value;
-      // "Hallo" und den Namen auf die Seite schreiben
-      document.getElementById("begruessung").textContent = "Hallo " + name;
-    }
+    <li class="profil">
+      <img src="bilder/max.jpg" alt="Foto von Max">
+      <span class="hundename">Max</span>
+    </li>
 
-    // Damit es auch mit der Enter-Taste funktioniert
-    document.getElementById("name").addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
-        sagHallo();
-      }
-    });
-  </script>
+    <li class="profil">
+      <img src="bilder/kira.jpg" alt="Foto von Kira">
+      <span class="hundename">Kira</span>
+    </li>
+
+    <li class="profil">
+      <img src="bilder/rocky.jpg" alt="Foto von Rocky">
+      <span class="hundename">Rocky</span>
+    </li>
+
+  </ul>
 </body>
 </html>

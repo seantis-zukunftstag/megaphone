@@ -38,3 +38,50 @@ h1 {
   /* Abstand innen */
   padding: 10px;
 }
+
+/* ===== Profil-Liste ===== */
+
+/* Die ganze Liste */
+.profile {
+  /* Keine Aufzählungspunkte */
+  list-style: none;
+  padding: 0;
+  /* Nicht breiter als 500px und in der Mitte */
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Ein einzelnes Profil */
+.profil {
+  /* Bild und Name nebeneinander */
+  display: flex;
+  align-items: center;
+  /* Abstand zwischen Bild und Name */
+  gap: 20px;
+  /* Abstand zum nächsten Profil */
+  margin-bottom: 20px;
+  /* Kasten um das Profil */
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+/* Das Profilbild */
+.profil img {
+  /* Grösse vom Bild */
+  width: 80px;
+  height: 80px;
+  /* Bild füllt den Kreis aus, ohne verzerrt zu werden */
+  object-fit: cover;
+  /* Rundes Bild */
+  border-radius: 50%;
+  /* Rahmen um das Bild */
+  border: 3px solid #22e9f3;
+}
+
+/* Der Name vom Hund */
+.hundename {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: bold;
+}
