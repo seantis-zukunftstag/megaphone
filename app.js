@@ -31,3 +31,19 @@ function appInstallieren() {
     });
   });
 }
+
+// 3. "Neu laden"-Knopf
+// In der installierten App (vor allem Safari auf dem iPhone) kann man die Seite
+// nicht nach unten ziehen, um sie neu zu laden. Darum bauen wir auf jeder Seite
+// unten rechts einen runden Knopf 🔄 ein.
+document.addEventListener("DOMContentLoaded", function () {
+  const knopf = document.createElement("button");
+  knopf.className = "neu-laden-knopf";
+  knopf.textContent = "🔄";
+  knopf.title = "Seite neu laden";
+  knopf.addEventListener("click", function () {
+    // Die Seite neu laden. Unser Service Worker holt dabei die neuste Version aus dem Internet.
+    window.location.reload();
+  });
+  document.body.appendChild(knopf);
+});

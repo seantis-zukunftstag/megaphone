@@ -393,3 +393,21 @@ h1 {
   font-weight: bold;
   text-decoration: none;
 }
+
+/* ===== Neu-laden-Knopf ===== */
+/* Der runde Knopf 🔄 unten rechts. Er bleibt beim Scrollen immer am gleichen Ort. */
+.neu-laden-knopf {
+  position: fixed;
+  right: 16px;
+  /* Auf dem iPhone nicht hinter dem Balken ganz unten verstecken */
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  font-size: 28px;
+  border: none;
+  border-radius: 50%;
+  background-color: #22e9f3;
+  cursor: pointer;
+  /* Ein Schatten, damit man ihn auch über Bildern gut sieht */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
