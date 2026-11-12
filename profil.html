@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!-- Das ist die Profilseite von einem Hund. Welcher Hund, steht in der Adresse, z.B. profil.html?hund=bello -->
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Megaphone – Profil</title>
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=5, v=6 ...) -->
+  <link rel="stylesheet" href="style.css?v=4">
+
+  <!-- Hier holen wir die Daten von allen Hunden -->
+  <script src="hunde.js?v=1"></script>
+
+  <script>
+    // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
+    const benutzername = localStorage.getItem("name");
+    if (!benutzername) {
+      window.location.href = "index.html";
+    }
+  </script>
+</head>
+<body>
+  <!-- Oben: Zurück-Link -->
+  <div class="kopfzeile">
+    <a href="uebersicht.html">← Alle Hunde</a>
+  </div>
+
+  <!-- Profilbild und Name vom Hund -->
+  <div class="profil-kopf">
+    <img id="profilbild" src="" alt="">
+    <h1 id="hundename"></h1>
+  </div>
+
+  <!-- Hier kommen alle Posts hinein, das neuste zuerst -->
+  <div id="posts"></div>
+
+  <script>
+    // Welcher Hund? Das steht in der Adresse nach "?hund="
+    const hundId = new URLSearchParams(window.location.search).get("hund");
+    const hund = hunde[hundId];
+
+    if (!hund) {
+      // Diesen Hund gibt es nicht
+      document.getElementById("hundename").textContent = "Hund nicht gefunden";
+    } else {
+      // Name und Profilbild oben anzeigen
+      document.getElementById("hundename").textContent = hund.name;
+      document.getElementById("profilbild").src = hund.profilbild;
+      document.getElementById("profilbild").alt = "Foto von " + hund.name;
+      document.title = "Megaphone – " + hund.name;
+
+      // Posts nach Datum sortieren: das neuste zuerst
+      const posts = hund.posts.slice().sort(function (a, b) {
+        return b.datum.localeCompare(a.datum);
+      });
+
+      // Jeden Post auf die Seite bringen
+      for (const post of posts) {
+        zeigePost(post);
+      }
+    }
+
+    // Baut einen Post zusammen: Bild, Beschreibung, Kommentare und Eingabefeld
+    function zeigePost(post) {
+      const kasten = document.createElement("div");
+      kasten.className = "post";
+
+      // 1. Das Bild
+      const bild = document.createElement("img");
+      bild.src = post.bild;
+      bild.alt = post.beschreibung;
+      kasten.appendChild(bild);
+
+      // 2. Die Beschreibung
+      const beschreibung = document.createElement("p");
+      beschreibung.className = "beschreibung";
+      beschreibung.textContent = post.beschreibung;
+      kasten.appendChild(beschreibung);
+
+      // Das Datum, klein darunter
+      const datum = document.createElement("p");
+      datum.className = "datum";
+      datum.textContent = new Date(post.datum).toLocaleDateString("de-CH");
+      kasten.appendChild(datum);
+
+      // 3. Die Kommentare
+      const liste = document.createElement("ul");
+      liste.className = "kommentare";
+      kasten.appendChild(liste);
+      for (const kommentar of ladeKommentare(post.id)) {
+        zeigeKommentar(liste, kommentar);
+      }
+
+      // 4. Neuen Kommentar schreiben
+      const formular = document.createElement("form");
+      formular.className = "kommentar-eingabe";
+      const feld = document.createElement("input");
+      feld.type = "text";
+      feld.placeholder = "Kommentar schreiben ...";
+      const knopf = document.createElement("button");
+      knopf.type = "submit";
+      knopf.textContent = "Senden";
+      formular.appendChild(feld);
+      formular.appendChild(knopf);
+      kasten.appendChild(formular);
+
+      // Wenn man auf "Senden" klickt (oder Enter drückt)
+      formular.addEventListener("submit", function (event) {
+        event.preventDefault(); // Seite nicht neu laden
+        const text = feld.value.trim();
+        if (text === "") return;
+
+        const kommentar = { von: benutzername, text: text };
+        speichereKommentar(post.id, kommentar);
+        zeigeKommentar(liste, kommentar);
+        feld.value = "";
+      });
+
+      document.getElementById("posts").appendChild(kasten);
+    }
+
+    // Zeigt einen Kommentar in der Liste an, z.B. "Anna: So süss!"
+    function zeigeKommentar(liste, kommentar) {
+      const eintrag = document.createElement("li");
+      const von = document.createElement("strong");
+      von.textContent = kommentar.von + ": ";
+      eintrag.appendChild(von);
+      eintrag.appendChild(document.createTextNode(kommentar.text));
+      liste.appendChild(eintrag);
+    }
+
+    // Kommentare werden vorerst nur in diesem Browser gespeichert
+    function ladeKommentare(postId) {
+      try {
+        return JSON.parse(localStorage.getItem("kommentare-" + postId)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function speichereKommentar(postId, kommentar) {
+      const alle = ladeKommentare(postId);
+      alle.push(kommentar);
+      try {
+        localStorage.setItem("kommentare-" + postId, JSON.stringify(alle));
+      } catch (e) {}
+    }
+  </script>
+</body>
+</html>

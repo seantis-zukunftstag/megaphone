@@ -9,9 +9,9 @@
   <!-- Dieser Titel steht oben im Browser-Tab -->
   <title>Megaphone</title>
   <!-- Hier holen wir unsere Stil-Datei, damit die Seite schön aussieht -->
-  <!-- "?v=3": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=4, v=5 ...).
+  <!-- "?v=4": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=5, v=6 ...).
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 
   <script>
     // Den Namen holen, den man bei der Anmeldung eingegeben hat
@@ -34,32 +34,43 @@
   <h1>Unsere Hunde</h1>
 
   <!-- Die Liste mit allen Hunde-Profilen -->
-  <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern -->
+  <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern.
+       Bei "hund=" kommt der Name aus hunde.js hin. -->
   <ul class="profile">
 
     <li class="profil">
-      <img src="bilder/bello.jpg" alt="Foto von Bello">
-      <span class="hundename">Bello</span>
+      <a href="profil.html?hund=bello">
+        <img src="bilder/bello.jpg" alt="Foto von Bello">
+        <span class="hundename">Bello</span>
+      </a>
     </li>
 
     <li class="profil">
-      <img src="bilder/luna.jpg" alt="Foto von Luna">
-      <span class="hundename">Luna</span>
+      <a href="profil.html?hund=luna">
+        <img src="bilder/luna.jpg" alt="Foto von Luna">
+        <span class="hundename">Luna</span>
+      </a>
     </li>
 
     <li class="profil">
-      <img src="bilder/max.jpg" alt="Foto von Max">
-      <span class="hundename">Max</span>
+      <a href="profil.html?hund=max">
+        <img src="bilder/max.jpg" alt="Foto von Max">
+        <span class="hundename">Max</span>
+      </a>
     </li>
 
     <li class="profil">
-      <img src="bilder/kira.jpg" alt="Foto von Kira">
-      <span class="hundename">Kira</span>
+      <a href="profil.html?hund=kira">
+        <img src="bilder/kira.jpg" alt="Foto von Kira">
+        <span class="hundename">Kira</span>
+      </a>
     </li>
 
     <li class="profil">
-      <img src="bilder/rocky.jpg" alt="Foto von Rocky">
-      <span class="hundename">Rocky</span>
+      <a href="profil.html?hund=rocky">
+        <img src="bilder/rocky.jpg" alt="Foto von Rocky">
+        <span class="hundename">Rocky</span>
+      </a>
     </li>
 
   </ul>

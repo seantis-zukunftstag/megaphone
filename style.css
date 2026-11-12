@@ -53,17 +53,28 @@ h1 {
 
 /* Ein einzelnes Profil */
 .profil {
-  /* Bild und Name nebeneinander */
-  display: flex;
-  align-items: center;
-  /* Abstand zwischen Bild und Name */
-  gap: 20px;
   /* Abstand zum nächsten Profil */
   margin-bottom: 20px;
   /* Kasten um das Profil */
   background-color: #1a1a1a;
   border-radius: 12px;
+}
+
+/* Der Link im Profil (darauf klickt man, um das Profil zu öffnen) */
+.profil a {
+  /* Bild und Name nebeneinander */
+  display: flex;
+  align-items: center;
+  /* Abstand zwischen Bild und Name */
+  gap: 20px;
   padding: 12px;
+  /* Keine Unterstreichung wie bei normalen Links */
+  text-decoration: none;
+}
+
+/* Wenn man mit der Maus über ein Profil fährt, wird es etwas heller */
+.profil:hover {
+  background-color: #2a2a2a;
 }
 
 /* Das Profilbild */
@@ -122,4 +133,92 @@ h1 {
 /* Der Abmelden-Link */
 .kopfzeile a {
   color: #22e9f3;
+}
+
+/* ===== Profilseite von einem Hund ===== */
+
+/* Profilbild und Name oben */
+.profil-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.profil-kopf img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #22e9f3;
+  flex-shrink: 0;
+}
+
+/* Ein Post: Bild, Beschreibung, Kommentare */
+.post {
+  max-width: 500px;
+  margin: 0 auto 40px auto;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  /* Ecken vom Bild auch abrunden */
+  overflow: hidden;
+}
+
+/* Das Bild im Post: so breit wie der Kasten */
+.post img {
+  width: 100%;
+  /* Alle Bilder gleich hoch, nichts wird verzerrt */
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+
+/* Beschreibung unter dem Bild */
+.beschreibung {
+  font-size: 20px;
+  margin: 12px 12px 4px 12px;
+}
+
+/* Das Datum, klein und grau */
+.datum {
+  color: #888888;
+  font-size: 14px;
+  margin: 0 12px 12px 12px;
+}
+
+/* Die Kommentar-Liste */
+.kommentare {
+  list-style: none;
+  padding: 0 12px;
+  margin: 0;
+}
+
+.kommentare li {
+  padding: 6px 0;
+  border-top: 1px solid #333333;
+}
+
+/* Der Name vor dem Kommentar */
+.kommentare strong {
+  color: #22e9f3;
+}
+
+/* Eingabefeld und Knopf für neue Kommentare */
+.kommentar-eingabe {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
+
+.kommentar-eingabe input {
+  /* Das Feld nimmt den ganzen restlichen Platz */
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  padding: 8px;
+}
+
+.kommentar-eingabe button {
+  font-size: 16px;
+  padding: 8px 12px;
 }
