@@ -8,7 +8,7 @@
 // Wenn ihr neue Seiten oder Bilder hinzufügt, die sofort offline gehen sollen:
 // in die Liste DATEIEN eintragen und die Versionsnummer erhöhen.
 
-const VERSION = "megaphone-v4";
+const VERSION = "megaphone-v5";
 
 // Diese Dateien werden gleich beim Installieren gespeichert.
 // (Die Fotos und Daten kommen aus Supabase und werden hier nicht gespeichert.)
@@ -18,7 +18,7 @@ const DATEIEN = [
   "anmelden.html",
   "profil.html",
   "mein-profil.html",
-  "style.css?v=10",
+  "style.css?v=11",
   "app.js?v=1",
   "db.js?v=2",
   "lib/supabase-2.45.4.js",
@@ -79,4 +79,11 @@ self.addEventListener("fetch", function (event) {
         });
       })
   );
+});
+
+// 4. Jemand tippt auf eine Benachrichtigung ("Bello hat ein neues Foto gepostet"):
+//    Die Benachrichtigung schliessen und das Profil vom Hund öffnen.
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  event.waitUntil(self.clients.openWindow(event.notification.data.adresse));
 });

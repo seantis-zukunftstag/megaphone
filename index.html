@@ -11,7 +11,7 @@
   <title>Unsere Hunde</title>
   <!-- "?v=10": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=11, v=12 ...).
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
   <link rel="manifest" href="manifest.json?v=2">
@@ -46,14 +46,21 @@
     <button class="installieren-knopf" onclick="appInstallieren()" hidden>📲 App installieren</button>
   </div>
 
+  <!-- Hier erscheinen Meldungen wie "Bello hat etwas Neues gepostet" -->
+  <div id="neuigkeiten"></div>
+
   <!-- Die Liste mit allen Hunde-Profilen. Sie wird aus der Datenbank gefüllt. -->
   <p class="hinweis" id="laden">Lade Hunde ...</p>
   <ul class="profile" id="liste"></ul>
 
   <script>
+    let ich = null;          // null = niemand angemeldet
+    let abos = new Map();    // Meine Abos: Hund-ID → bis wann ich die Posts kenne ("gesehen")
+    const hundeNamen = {};   // Hund-ID → Name (für die Benachrichtigungen)
+
     async function start() {
       // Wer ist angemeldet? (null = niemand, die Seite ist trotzdem sichtbar)
-      const ich = await aktuellerBenutzer();
+      ich = await aktuellerBenutzer();
       const meineId = ich ? ich.id : null;
       if (ich) {
         document.getElementById("begruessung").textContent = "Hallo " + ich.name;
@@ -68,6 +75,14 @@
       if (error) {
         fehler("Die Hunde konnten nicht geladen werden.", error);
         return;
+      }
+
+      // Angemeldet: Meine Abos holen
+      if (ich) {
+        const { data: meineAbos } = await db.from("abos").select("hund_id, gesehen");
+        for (const abo of meineAbos || []) {
+          abos.set(abo.hund_id, abo.gesehen);
+        }
       }
 
       // Den eigenen Hund ganz nach oben
@@ -95,7 +110,106 @@
         link.appendChild(bild);
         link.appendChild(name);
         eintrag.appendChild(link);
+
+        // Neben dem Namen: "Abonnieren" (nur angemeldet und nicht beim eigenen Hund)
+        if (ich && !meiner) {
+          eintrag.appendChild(aboKnopf(hund.id));
+        }
+
         document.getElementById("liste").appendChild(eintrag);
+        hundeNamen[hund.id] = hund.name;
+      }
+
+      // Angemeldet: Gleich nach neuen Posts schauen, danach alle 30 Sekunden nochmals
+      if (ich) {
+        neuePostsPruefen();
+        setInterval(neuePostsPruefen, 30000);
+      }
+    }
+
+    // Baut den Knopf "Abonnieren" / "Abonniert ✓" für einen Hund
+    function aboKnopf(hundId) {
+      const knopf = document.createElement("button");
+      knopf.className = "abo-knopf";
+
+      // Text und Farbe passend zum Abo anzeigen
+      function zeigen() {
+        const abonniert = abos.has(hundId);
+        knopf.textContent = abonniert ? "Abonniert ✓" : "Abonnieren";
+        knopf.classList.toggle("gewaehlt", abonniert);
+      }
+
+      knopf.addEventListener("click", async function () {
+        knopf.disabled = true;
+        let antwort;
+        if (abos.has(hundId)) {
+          // Schon abonniert: Abo wieder beenden
+          antwort = await db.from("abos").delete().eq("hund_id", hundId).eq("besitzer", ich.id);
+          if (!antwort.error) abos.delete(hundId);
+        } else {
+          // Das Handy fragen, ob wir Benachrichtigungen zeigen dürfen (nur beim ersten Mal)
+          if ("Notification" in window && Notification.permission === "default") {
+            await Notification.requestPermission();
+          }
+          // Abo speichern. "gesehen" setzt die Datenbank auf "jetzt".
+          antwort = await db.from("abos").insert({ hund_id: hundId }).select("gesehen").single();
+          if (!antwort.error) abos.set(hundId, antwort.data.gesehen);
+        }
+        knopf.disabled = false;
+        if (antwort.error) {
+          fehler("Das Abo konnte nicht gespeichert werden.", antwort.error);
+          return;
+        }
+        zeigen();
+      });
+
+      zeigen();
+      return knopf;
+    }
+
+    // Schaut bei jedem abonnierten Hund: Gibt es Posts, die neuer sind als "gesehen"?
+    async function neuePostsPruefen() {
+      for (const [hundId, gesehen] of abos) {
+        const { data: neue } = await db
+          .from("posts")
+          .select("erstellt")
+          .eq("hund_id", hundId)
+          .gt("erstellt", gesehen)
+          .order("erstellt", { ascending: false });
+        if (!neue || neue.length === 0) continue;
+
+        // Benachrichtigen, z.B. "Bello hat 2 neue Fotos gepostet"
+        const name = hundeNamen[hundId] || "Ein Hund";
+        const text = neue.length === 1
+          ? name + " hat ein neues Foto gepostet"
+          : name + " hat " + neue.length + " neue Fotos gepostet";
+        benachrichtigen(text, "profil.html?hund=" + hundId);
+
+        // Merken: Diese Posts kennen wir jetzt (der neuste ist zuoberst)
+        abos.set(hundId, neue[0].erstellt);
+        await db.from("abos").update({ gesehen: neue[0].erstellt }).eq("hund_id", hundId).eq("besitzer", ich.id);
+      }
+    }
+
+    // Zeigt eine Meldung oben auf der Seite und, wenn erlaubt, auch als Handy-Benachrichtigung
+    function benachrichtigen(text, adresse) {
+      // 1. Auf der Seite (klappt immer)
+      const meldung = document.createElement("a");
+      meldung.className = "neuigkeit";
+      meldung.href = adresse;
+      meldung.textContent = "🔔 " + text;
+      document.getElementById("neuigkeiten").appendChild(meldung);
+
+      // 2. Als Benachrichtigung vom Handy/Computer (nur wenn erlaubt).
+      //    Das macht der Service Worker, so klappt es auch auf Android.
+      if ("Notification" in window && Notification.permission === "granted" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.ready.then(function (sw) {
+          sw.showNotification("Unsere Hunde", {
+            body: text,
+            icon: "icons/icon-192.png",
+            data: { adresse: adresse },
+          });
+        });
       }
     }
 

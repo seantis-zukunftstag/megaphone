@@ -58,6 +58,9 @@ h1 {
   /* Kasten um das Profil */
   background-color: #1a1a1a;
   border-radius: 12px;
+  /* Link (Bild + Name) und "Abonnieren"-Knopf nebeneinander */
+  display: flex;
+  align-items: center;
 }
 
 /* Der Link im Profil (darauf klickt man, um das Profil zu öffnen) */
@@ -70,6 +73,8 @@ h1 {
   padding: 12px;
   /* Keine Unterstreichung wie bei normalen Links */
   text-decoration: none;
+  /* Den ganzen Platz nehmen, der Knopf kommt ganz nach rechts */
+  flex: 1;
 }
 
 /* Wenn man mit der Maus über ein Profil fährt, wird es etwas heller */
@@ -352,4 +357,39 @@ h1 {
 /* "Anmelden, um zu kommentieren" unter einem Post */
 .kommentar-eingabe a {
   color: #22e9f3;
+}
+
+/* ===== Abonnieren ===== */
+
+/* Der Knopf "Abonnieren" rechts neben dem Namen */
+.abo-knopf {
+  margin-right: 12px;
+  padding: 8px 12px;
+  font-size: 16px;
+  color: #000000;
+  background-color: #22e9f3;
+  border: 2px solid #22e9f3;
+  border-radius: 20px;
+  cursor: pointer;
+  /* Den Text nicht auf zwei Zeilen umbrechen */
+  white-space: nowrap;
+}
+
+/* Schon abonniert: nur noch ein Rahmen */
+.abo-knopf.gewaehlt {
+  color: #22e9f3;
+  background-color: transparent;
+}
+
+/* Die Meldung "🔔 Bello hat ein neues Foto gepostet" oben auf der Startseite */
+.neuigkeit {
+  display: block;
+  max-width: 476px;
+  margin: 0 auto 12px auto;
+  padding: 12px;
+  color: #000000;
+  background-color: #22e9f3;
+  border-radius: 12px;
+  font-weight: bold;
+  text-decoration: none;
 }
