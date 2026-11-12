@@ -1,0 +1,40 @@
+/* Das ist unsere Stil-Datei (CSS). Hier bestimmen wir, wie die Seite aussieht. */
+
+/* "body" ist die ganze Seite */
+body {
+  /* Hintergrundfarbe der Seite */
+  background-color: #000000;
+  /* Farbe vom Text */
+  color: #333333;
+  /* Schriftart */
+  font-family: Arial, Helvetica, sans-serif;
+  /* Abstand zum Rand */
+  margin: 40px;
+}
+
+/* "h1" ist die grosse Überschrift */
+h1 {
+  /* Farbe der Überschrift */
+  color: #22e9f3;
+  /* Grösse der Schrift */
+  font-size: 48px;
+  /* Text in die Mitte setzen */
+  text-align: center;
+}
+
+/* Der Bereich mit dem Eingabefeld und dem Knopf */
+.name-eingabe {
+  /* In die Mitte setzen */
+  text-align: center;
+  /* Abstand nach oben */
+  margin-top: 40px;
+}
+
+/* Das Eingabefeld und der Knopf */
+.name-eingabe input,
+.name-eingabe button {
+  /* Grösse der Schrift */
+  font-size: 24px;
+  /* Abstand innen */
+  padding: 10px;
+}
