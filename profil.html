@@ -5,11 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Megaphone – Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=8, v=9 ...) -->
-  <link rel="stylesheet" href="style.css?v=7">
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=9, v=10 ...) -->
+  <link rel="stylesheet" href="style.css?v=8">
 
   <!-- Hier holen wir die Daten von allen Hunden -->
   <script src="hunde.js?v=1"></script>
+  <script src="mein-hund.js?v=1"></script>
 
   <script>
     // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
@@ -23,6 +24,8 @@
   <!-- Oben: Zurück-Link -->
   <div class="kopfzeile">
     <a href="uebersicht.html">← Alle Hunde</a>
+    <!-- Nur beim eigenen Hund sichtbar -->
+    <a href="mein-profil.html" id="bearbeiten-link" hidden>📷 Foto posten</a>
   </div>
 
   <!-- Profilbild und Name vom Hund -->
@@ -48,6 +51,17 @@
       document.getElementById("profilbild").src = hund.profilbild;
       document.getElementById("profilbild").alt = "Foto von " + hund.name;
       document.title = "Megaphone – " + hund.name;
+
+      // Beim eigenen Hund: Link zum Fotos-Posten zeigen
+      if (hundId === "mein") {
+        document.getElementById("bearbeiten-link").hidden = false;
+        if (hund.posts.length === 0) {
+          const leer = document.createElement("p");
+          leer.className = "hinweis";
+          leer.textContent = "Noch keine Fotos. Tippe oben auf «Foto posten».";
+          document.getElementById("posts").appendChild(leer);
+        }
+      }
 
       // Posts nach Datum sortieren: das neuste zuerst
       const posts = hund.posts.slice().sort(function (a, b) {

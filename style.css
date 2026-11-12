@@ -251,3 +251,92 @@ h1 {
   border-color: #ff4d6d;
   background-color: #3d0d16;
 }
+
+/* ===== Mein Profil ===== */
+
+/* Was "hidden" ist, soll wirklich unsichtbar sein */
+[hidden] {
+  display: none !important;
+}
+
+/* Ein Kasten mit Formular (Profil bearbeiten, Foto posten) */
+.formular-kasten {
+  max-width: 500px;
+  margin: 0 auto 30px auto;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 16px;
+  /* Alles untereinander */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formular-kasten h2 {
+  color: #22e9f3;
+  margin: 0 0 6px 0;
+}
+
+.formular-kasten input[type="text"] {
+  font-size: 18px;
+  padding: 10px;
+}
+
+.formular-kasten button {
+  font-size: 18px;
+  padding: 12px;
+  background-color: #22e9f3;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Bild antippen, um eine Datei auszuwählen */
+.bild-waehlen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #22e9f3;
+}
+
+/* Profilbild im Formular: rund */
+.bild-waehlen img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid #22e9f3;
+}
+
+/* Grosses Feld zum Foto auswählen */
+.foto-waehlen {
+  border: 2px dashed #444444;
+  border-radius: 12px;
+  padding: 20px;
+  font-size: 20px;
+}
+
+/* Vorschau vom Foto: quadratisch wie im Profil */
+.foto-waehlen img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  border: none;
+}
+
+/* Kleiner grauer Hinweistext */
+.hinweis {
+  color: #888888;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* Der eigene Hund in der Übersicht hat einen türkisen Rahmen */
+.mein-profil {
+  border: 2px solid #22e9f3;
+}

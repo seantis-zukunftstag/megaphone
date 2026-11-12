@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<!-- Hier richtet man das eigene Profil ein und lädt Fotos hoch. -->
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Megaphone – Mein Profil</title>
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=9, v=10 ...) -->
+  <link rel="stylesheet" href="style.css?v=8">
+
+  <script src="hunde.js?v=1"></script>
+  <script src="mein-hund.js?v=1"></script>
+
+  <script>
+    // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
+    const benutzername = localStorage.getItem("name");
+    if (!benutzername) {
+      window.location.href = "index.html";
+    }
+  </script>
+</head>
+<body>
+  <div class="kopfzeile">
+    <a href="uebersicht.html">← Alle Hunde</a>
+    <a href="profil.html?hund=mein" id="ansehen-link">Mein Profil ansehen →</a>
+  </div>
+
+  <h1>Mein Profil</h1>
+
+  <!-- 1. Name und Profilbild vom eigenen Hund -->
+  <div class="formular-kasten">
+    <h2>Mein Hund</h2>
+
+    <div class="profil-kopf">
+      <!-- Auf das Bild tippen, um ein Profilbild auszuwählen -->
+      <label for="profilbild-datei" class="bild-waehlen">
+        <img id="profilbild-vorschau" src="" alt="Profilbild">
+        <span>Bild ändern</span>
+      </label>
+      <input type="file" id="profilbild-datei" accept="image/*" hidden>
+    </div>
+
+    <label for="hundename-feld">Name von deinem Hund</label>
+    <input type="text" id="hundename-feld" placeholder="z.B. Sammy">
+
+    <button id="profil-speichern">Speichern</button>
+  </div>
+
+  <!-- 2. Neues Foto posten -->
+  <div class="formular-kasten" id="post-kasten">
+    <h2>Neues Foto posten</h2>
+
+    <label for="foto-datei" class="bild-waehlen foto-waehlen">
+      <img id="foto-vorschau" src="" alt="" hidden>
+      <span id="foto-hinweis">📷 Foto auswählen</span>
+    </label>
+    <input type="file" id="foto-datei" accept="image/*" hidden>
+
+    <label for="beschreibung-feld">Beschreibung</label>
+    <input type="text" id="beschreibung-feld" placeholder="Was macht dein Hund gerade?">
+
+    <button id="posten">Posten</button>
+  </div>
+
+  <p class="hinweis">
+    Hinweis: Deine Fotos werden vorerst nur auf diesem Gerät gespeichert.
+    Andere sehen sie noch nicht.
+  </p>
+
+  <script>
+    // Meinen Hund laden, oder einen neuen, leeren anlegen
+    let meinHund = ladeMeinenHund() || { name: "", profilbild: "", posts: [] };
+
+    const profilbildVorschau = document.getElementById("profilbild-vorschau");
+    const hundenameFeld = document.getElementById("hundename-feld");
+
+    // Was schon gespeichert ist, in die Felder schreiben
+    profilbildVorschau.src = meinHund.profilbild || LEERES_PROFILBILD;
+    hundenameFeld.value = meinHund.name;
+    zeigeOderVersteckePosten();
+
+    // Posten geht erst, wenn der Hund einen Namen hat
+    function zeigeOderVersteckePosten() {
+      const fertig = meinHund.name !== "";
+      document.getElementById("post-kasten").hidden = !fertig;
+      document.getElementById("ansehen-link").hidden = !fertig;
+    }
+
+    // Speichern und melden, falls der Speicher voll ist
+    function speichern() {
+      if (!speichereMeinenHund(meinHund)) {
+        alert("Der Speicher ist voll. Lösche ein paar Fotos oder nimm kleinere Bilder.");
+        return false;
+      }
+      return true;
+    }
+
+    // ----- Profilbild -----
+    let neuesProfilbild = null;
+
+    document.getElementById("profilbild-datei").addEventListener("change", function () {
+      const datei = this.files[0];
+      if (!datei) return;
+      // Profilbilder sind klein, 300 Pixel reichen
+      verkleinereFoto(datei, 300, function (bild) {
+        neuesProfilbild = bild;
+        profilbildVorschau.src = bild;
+      });
+    });
+
+    document.getElementById("profil-speichern").addEventListener("click", function () {
+      const name = hundenameFeld.value.trim();
+      if (name === "") {
+        alert("Bitte gib den Namen von deinem Hund ein.");
+        return;
+      }
+      meinHund.name = name;
+      if (neuesProfilbild) {
+        meinHund.profilbild = neuesProfilbild;
+      }
+      if (speichern()) {
+        zeigeOderVersteckePosten();
+        alert("Gespeichert!");
+      }
+    });
+
+    // ----- Neues Foto posten -----
+    let neuesFoto = null;
+    const fotoVorschau = document.getElementById("foto-vorschau");
+    const fotoHinweis = document.getElementById("foto-hinweis");
+
+    document.getElementById("foto-datei").addEventListener("change", function () {
+      const datei = this.files[0];
+      if (!datei) return;
+      // Post-Fotos dürfen etwas grösser sein: 800 Pixel
+      verkleinereFoto(datei, 800, function (bild) {
+        neuesFoto = bild;
+        fotoVorschau.src = bild;
+        fotoVorschau.hidden = false;
+        fotoHinweis.textContent = "📷 Anderes Foto wählen";
+      });
+    });
+
+    document.getElementById("posten").addEventListener("click", function () {
+      if (!neuesFoto) {
+        alert("Bitte wähle zuerst ein Foto aus.");
+        return;
+      }
+      const beschreibung = document.getElementById("beschreibung-feld").value.trim();
+
+      meinHund.posts.push({
+        // Eine eindeutige id aus der aktuellen Zeit
+        id: "mein-" + benutzername + "-" + Date.now(),
+        bild: neuesFoto,
+        // Datum mit Uhrzeit, damit das neuste Foto sicher zuoberst kommt
+        datum: new Date().toISOString(),
+        beschreibung: beschreibung,
+      });
+
+      if (speichern()) {
+        // Direkt zum eigenen Profil, dort ist das neue Foto zuoberst
+        window.location.href = "profil.html?hund=mein";
+      } else {
+        // Hat nicht geklappt: den Post wieder wegnehmen
+        meinHund.posts.pop();
+      }
+    });
+  </script>
+</body>
+</html>

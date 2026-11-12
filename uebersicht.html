@@ -9,9 +9,13 @@
   <!-- Dieser Titel steht oben im Browser-Tab -->
   <title>Megaphone</title>
   <!-- Hier holen wir unsere Stil-Datei, damit die Seite schön aussieht -->
-  <!-- "?v=7": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=8, v=9 ...).
+  <!-- "?v=8": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=9, v=10 ...).
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
+
+  <!-- Die Daten von allen Hunden und vom eigenen Hund -->
+  <script src="hunde.js?v=1"></script>
+  <script src="mein-hund.js?v=1"></script>
 
   <script>
     // Den Namen holen, den man bei der Anmeldung eingegeben hat
@@ -28,7 +32,11 @@
   <!-- Oben: Begrüssung und Abmelden -->
   <div class="kopfzeile">
     <span id="begruessung"></span>
-    <a href="#" onclick="abmelden()">Abmelden</a>
+    <span>
+      <a href="mein-profil.html">Mein Profil</a>
+      ·
+      <a href="#" onclick="abmelden()">Abmelden</a>
+    </span>
   </div>
 
   <h1>Unsere Hunde</h1>
@@ -78,6 +86,25 @@
   <script>
     // "Hallo" und den Namen oben auf die Seite schreiben
     document.getElementById("begruessung").textContent = "Hallo " + benutzername;
+
+    // Wenn es schon einen eigenen Hund gibt: ganz oben in die Liste setzen
+    if (hunde.mein) {
+      const eintrag = document.createElement("li");
+      eintrag.className = "profil mein-profil";
+      const link = document.createElement("a");
+      link.href = "profil.html?hund=mein";
+      const bild = document.createElement("img");
+      bild.src = hunde.mein.profilbild;
+      bild.alt = "Foto von " + hunde.mein.name;
+      const name = document.createElement("span");
+      name.className = "hundename";
+      name.textContent = hunde.mein.name + " (mein Hund)";
+      link.appendChild(bild);
+      link.appendChild(name);
+      eintrag.appendChild(link);
+      const liste = document.querySelector(".profile");
+      liste.insertBefore(eintrag, liste.firstChild);
+    }
 
     // Beim Abmelden den Namen vergessen und zurück zur Anmeldung
     function abmelden() {
