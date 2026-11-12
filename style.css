@@ -411,3 +411,11 @@ h1 {
   /* Ein Schatten, damit man ihn auch über Bildern gut sieht */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
+
+/* "3 Abonnenten" klein und grau unter dem Hundenamen */
+.abonnenten {
+  display: block;
+  color: #888888;
+  font-size: 14px;
+  margin-top: 4px;
+}

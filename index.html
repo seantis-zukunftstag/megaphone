@@ -11,7 +11,7 @@
   <title>Unsere Hunde</title>
   <!-- "?v=10": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=11, v=12 ...).
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
   <link rel="manifest" href="manifest.json?v=2">
@@ -57,6 +57,7 @@
     let ich = null;          // null = niemand angemeldet
     let abos = new Map();    // Meine Abos: Hund-ID → bis wann ich die Posts kenne ("gesehen")
     const hundeNamen = {};   // Hund-ID → Name (für die Benachrichtigungen)
+    const anzahlAbonnenten = {}; // Hund-ID → wie viele Abonnenten
 
     async function start() {
       // Wer ist angemeldet? (null = niemand, die Seite ist trotzdem sichtbar)
@@ -85,6 +86,12 @@
         }
       }
 
+      // Wie viele Abonnenten hat jeder Hund? (Das darf man auch ohne Anmeldung sehen.)
+      const { data: zahlen } = await db.rpc("abonnenten");
+      for (const zahl of zahlen || []) {
+        anzahlAbonnenten[zahl.hund_id] = zahl.anzahl;
+      }
+
       // Den eigenen Hund ganz nach oben
       hunde.sort(function (a, b) {
         return (b.besitzer === meineId) - (a.besitzer === meineId);
@@ -107,13 +114,23 @@
         name.className = "hundename";
         name.textContent = meiner ? hund.name + " (mein Hund)" : hund.name;
 
+        // Klein unter dem Namen: "3 Abonnenten"
+        const abonnenten = document.createElement("span");
+        abonnenten.className = "abonnenten";
+        zeigeAbonnenten(abonnenten, hund.id);
+
+        // Name und Abonnenten untereinander
+        const text = document.createElement("div");
+        text.appendChild(name);
+        text.appendChild(abonnenten);
+
         link.appendChild(bild);
-        link.appendChild(name);
+        link.appendChild(text);
         eintrag.appendChild(link);
 
         // Neben dem Namen: "Abonnieren" (nur angemeldet und nicht beim eigenen Hund)
         if (ich && !meiner) {
-          eintrag.appendChild(aboKnopf(hund.id));
+          eintrag.appendChild(aboKnopf(hund.id, abonnenten));
         }
 
         document.getElementById("liste").appendChild(eintrag);
@@ -127,8 +144,15 @@
       }
     }
 
-    // Baut den Knopf "Abonnieren" / "Abonniert ✓" für einen Hund
-    function aboKnopf(hundId) {
+    // Schreibt "1 Abonnent" oder "5 Abonnenten" in das Feld
+    function zeigeAbonnenten(feld, hundId) {
+      const anzahl = anzahlAbonnenten[hundId] || 0;
+      feld.textContent = anzahl === 1 ? "1 Abonnent" : anzahl + " Abonnenten";
+    }
+
+    // Baut den Knopf "Abonnieren" / "Abonniert ✓" für einen Hund.
+    // "abonnentenFeld" ist die Zahl unter dem Namen, sie zählt beim Klicken mit.
+    function aboKnopf(hundId, abonnentenFeld) {
       const knopf = document.createElement("button");
       knopf.className = "abo-knopf";
 
@@ -145,7 +169,10 @@
         if (abos.has(hundId)) {
           // Schon abonniert: Abo wieder beenden
           antwort = await db.from("abos").delete().eq("hund_id", hundId).eq("besitzer", ich.id);
-          if (!antwort.error) abos.delete(hundId);
+          if (!antwort.error) {
+            abos.delete(hundId);
+            anzahlAbonnenten[hundId] = (anzahlAbonnenten[hundId] || 0) - 1;
+          }
         } else {
           // Das Handy fragen, ob wir Benachrichtigungen zeigen dürfen (nur beim ersten Mal)
           if ("Notification" in window && Notification.permission === "default") {
@@ -153,7 +180,10 @@
           }
           // Abo speichern. "gesehen" setzt die Datenbank auf "jetzt".
           antwort = await db.from("abos").insert({ hund_id: hundId }).select("gesehen").single();
-          if (!antwort.error) abos.set(hundId, antwort.data.gesehen);
+          if (!antwort.error) {
+            abos.set(hundId, antwort.data.gesehen);
+            anzahlAbonnenten[hundId] = (anzahlAbonnenten[hundId] || 0) + 1;
+          }
         }
         knopf.disabled = false;
         if (antwort.error) {
@@ -161,6 +191,7 @@
           return;
         }
         zeigen();
+        zeigeAbonnenten(abonnentenFeld, hundId);
       });
 
       zeigen();

@@ -184,3 +184,14 @@ create policy "Eigene Abos ändern"    on abos for update to authenticated using
 create policy "Abo beenden"           on abos for delete to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 
 grant select, insert, update, delete on abos to authenticated;
+
+
+-- Anzahl Abonnenten pro Hund. Verrät nur WIE VIELE, nicht WER.
+-- ("security definer" = die Funktion darf alle Abos zählen, auch fremde.)
+create function abonnenten() returns table (hund_id uuid, anzahl bigint)
+language sql stable security definer set search_path = public as $$
+  select hund_id, count(*) from abos group by hund_id
+$$;
+
+-- Alle dürfen die Zahlen sehen, auch ohne Anmeldung
+grant execute on function abonnenten() to anon, authenticated;
