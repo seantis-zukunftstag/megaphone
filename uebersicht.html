@@ -13,6 +13,16 @@
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
   <link rel="stylesheet" href="style.css?v=8">
 
+  <!-- Damit man die Seite als App installieren kann (PWA) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Megaphone">
+  <script src="app.js?v=1"></script>
+
   <!-- Die Daten von allen Hunden und vom eigenen Hund -->
   <script src="hunde.js?v=1"></script>
   <script src="mein-hund.js?v=1"></script>
@@ -40,6 +50,11 @@
   </div>
 
   <h1>Unsere Hunde</h1>
+
+  <!-- Erscheint nur, wenn das Handy die App installieren kann -->
+  <div class="name-eingabe">
+    <button class="installieren-knopf" onclick="appInstallieren()" hidden>📲 App installieren</button>
+  </div>
 
   <!-- Die Liste mit allen Hunde-Profilen -->
   <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern.
