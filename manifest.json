@@ -1,6 +1,6 @@
 {
-  "name": "Megaphone – Hunde App",
-  "short_name": "Megaphone",
+  "name": "Unsere Hunde",
+  "short_name": "Unsere Hunde",
   "description": "Fotos von Hunden teilen, liken und kommentieren.",
   "start_url": "./index.html",
   "scope": "./",

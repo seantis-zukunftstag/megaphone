@@ -1,34 +1,26 @@
 <!DOCTYPE html>
-<!-- Das ist die Profilseite von einem Hund. Welcher Hund, steht in der Adresse, z.B. profil.html?hund=bello -->
+<!-- Das ist die Profilseite von einem Hund. Welcher Hund, steht in der Adresse: profil.html?hund=... -->
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Megaphone – Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=9, v=10 ...) -->
-  <link rel="stylesheet" href="style.css?v=8">
+  <title>Unsere Hunde – Profil</title>
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=10, v=11 ...) -->
+  <link rel="stylesheet" href="style.css?v=9">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
   <meta name="theme-color" content="#000000">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Megaphone">
+  <meta name="apple-mobile-web-app-title" content="Unsere Hunde">
   <script src="app.js?v=1"></script>
 
-  <!-- Hier holen wir die Daten von allen Hunden -->
-  <script src="hunde.js?v=1"></script>
-  <script src="mein-hund.js?v=1"></script>
-
-  <script>
-    // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
-    const benutzername = localStorage.getItem("name");
-    if (!benutzername) {
-      window.location.href = "index.html";
-    }
-  </script>
+  <!-- Verbindung zur Datenbank -->
+  <script src="lib/supabase-2.45.4.js"></script>
+  <script src="db.js?v=1"></script>
 </head>
 <body>
   <!-- Oben: Zurück-Link -->
@@ -40,58 +32,84 @@
 
   <!-- Profilbild und Name vom Hund -->
   <div class="profil-kopf">
-    <img id="profilbild" src="" alt="">
-    <h1 id="hundename"></h1>
+    <img id="profilbild" src="" alt="" hidden>
+    <h1 id="hundename">Lade ...</h1>
   </div>
 
   <!-- Hier kommen alle Posts hinein, das neuste zuerst -->
   <div id="posts"></div>
 
   <script>
-    // Welcher Hund? Das steht in der Adresse nach "?hund="
-    const hundId = new URLSearchParams(window.location.search).get("hund");
-    const hund = hunde[hundId];
+    let ich = null;
 
-    if (!hund) {
-      // Diesen Hund gibt es nicht
-      document.getElementById("hundename").textContent = "Hund nicht gefunden";
-    } else {
-      // Name und Profilbild oben anzeigen
-      document.getElementById("hundename").textContent = hund.name;
-      document.getElementById("profilbild").src = hund.profilbild;
-      document.getElementById("profilbild").alt = "Foto von " + hund.name;
-      document.title = "Megaphone – " + hund.name;
+    async function start() {
+      // Nur für angemeldete Benutzer
+      ich = await brauchtAnmeldung();
 
-      // Beim eigenen Hund: Link zum Fotos-Posten zeigen
-      if (hundId === "mein") {
-        document.getElementById("bearbeiten-link").hidden = false;
-        if (hund.posts.length === 0) {
-          const leer = document.createElement("p");
-          leer.className = "hinweis";
-          leer.textContent = "Noch keine Fotos. Tippe oben auf «Foto posten».";
-          document.getElementById("posts").appendChild(leer);
-        }
+      // Welcher Hund? Das steht in der Adresse nach "?hund="
+      const hundId = new URLSearchParams(window.location.search).get("hund");
+
+      // Den Hund und seine Posts holen (das neuste zuerst)
+      const [hundAntwort, postAntwort] = await Promise.all([
+        db.from("hunde").select("*").eq("id", hundId).maybeSingle(),
+        db.from("posts").select("*").eq("hund_id", hundId).order("erstellt", { ascending: false }),
+      ]);
+      const hund = hundAntwort.data;
+      const posts = postAntwort.data || [];
+
+      if (!hund) {
+        document.getElementById("hundename").textContent = "Hund nicht gefunden";
+        return;
       }
 
-      // Posts nach Datum sortieren: das neuste zuerst
-      const posts = hund.posts.slice().sort(function (a, b) {
-        return b.datum.localeCompare(a.datum);
-      });
+      // Kommentare und Stimmen zu allen Posts holen
+      const postIds = posts.map(function (p) { return p.id; });
+      const [kommentarAntwort, stimmenAntwort, links] = await Promise.all([
+        db.from("kommentare").select("*").in("post_id", postIds).order("erstellt"),
+        db.from("stimmen").select("*").in("post_id", postIds),
+        bildLinks([hund.profilbild].concat(posts.map(function (p) { return p.bild; }))),
+      ]);
+      const kommentare = kommentarAntwort.data || [];
+      const stimmen = stimmenAntwort.data || [];
+
+      // Name und Profilbild oben anzeigen
+      document.getElementById("hundename").textContent = hund.name;
+      const profilbild = document.getElementById("profilbild");
+      profilbild.src = links[hund.profilbild] || LEERES_PROFILBILD;
+      profilbild.alt = "Foto von " + hund.name;
+      profilbild.hidden = false;
+      document.title = "Unsere Hunde – " + hund.name;
+
+      // Beim eigenen Hund: Link zum Fotos-Posten zeigen
+      if (hund.besitzer === ich.id) {
+        document.getElementById("bearbeiten-link").hidden = false;
+      }
+      if (posts.length === 0) {
+        const leer = document.createElement("p");
+        leer.className = "hinweis";
+        leer.textContent = "Noch keine Fotos.";
+        document.getElementById("posts").appendChild(leer);
+      }
 
       // Jeden Post auf die Seite bringen
       for (const post of posts) {
-        zeigePost(post);
+        zeigePost(
+          post,
+          links[post.bild],
+          kommentare.filter(function (k) { return k.post_id === post.id; }),
+          stimmen.filter(function (s) { return s.post_id === post.id; })
+        );
       }
     }
 
-    // Baut einen Post zusammen: Bild, Beschreibung, Kommentare und Eingabefeld
-    function zeigePost(post) {
+    // Baut einen Post zusammen: Bild, Beschreibung, Daumen, Kommentare und Eingabefeld
+    function zeigePost(post, bildLink, kommentare, stimmen) {
       const kasten = document.createElement("div");
       kasten.className = "post";
 
       // 1. Das Bild
       const bild = document.createElement("img");
-      bild.src = post.bild;
+      bild.src = bildLink || "";
       bild.alt = post.beschreibung;
       kasten.appendChild(bild);
 
@@ -104,77 +122,85 @@
       // Das Datum, klein darunter
       const datum = document.createElement("p");
       datum.className = "datum";
-      datum.textContent = new Date(post.datum).toLocaleDateString("de-CH");
+      datum.textContent = new Date(post.erstellt).toLocaleDateString("de-CH");
       kasten.appendChild(datum);
 
-      // Daumen hoch und Daumen runter
+      // Daumen hoch, Daumen runter und Herz
       const daumen = document.createElement("div");
       daumen.className = "daumen";
       const knopfHoch = document.createElement("button");
       const knopfRunter = document.createElement("button");
+      const knopfHerz = document.createElement("button");
+      knopfHerz.className = "herz";
       daumen.appendChild(knopfHoch);
       daumen.appendChild(knopfRunter);
+      daumen.appendChild(knopfHerz);
       kasten.appendChild(daumen);
 
-      // Zeigt die Zahlen auf den Knöpfen an und markiert, was man selbst gewählt hat
-      function zeigeDaumen() {
-        const stimmen = ladeStimmen(post.id);
-        const alle = Object.values(stimmen);
-        knopfHoch.textContent = "👍 " + alle.filter(function (s) { return s === "hoch"; }).length;
-        knopfRunter.textContent = "👎 " + alle.filter(function (s) { return s === "runter"; }).length;
-        knopfHoch.classList.toggle("gewaehlt", stimmen[benutzername] === "hoch");
-        knopfRunter.classList.toggle("gewaehlt", stimmen[benutzername] === "runter");
+      // Meine eigene Stimme bei diesem Post (oder eine leere)
+      function meineStimme() {
+        return stimmen.find(function (s) { return s.besitzer === ich.id; }) || { daumen: null, herz: false };
+      }
+
+      // Zahlen anzeigen und markieren, was man selbst gewählt hat
+      function zeigeStimmen() {
+        const meine = meineStimme();
+        const zaehle = function (pruefen) { return stimmen.filter(pruefen).length; };
+        knopfHoch.textContent = "👍 " + zaehle(function (s) { return s.daumen === "hoch"; });
+        knopfRunter.textContent = "👎 " + zaehle(function (s) { return s.daumen === "runter"; });
+        knopfHerz.textContent = (meine.herz ? "❤️ " : "🤍 ") + zaehle(function (s) { return s.herz; });
+        knopfHoch.classList.toggle("gewaehlt", meine.daumen === "hoch");
+        knopfRunter.classList.toggle("gewaehlt", meine.daumen === "runter");
+        knopfHerz.classList.toggle("gewaehlt", meine.herz);
+      }
+
+      // Neue Stimme in der Datenbank speichern
+      async function speichereStimme(daumenWahl, herz) {
+        let antwort;
+        if (daumenWahl === null && !herz) {
+          // Nichts mehr gewählt: Stimme löschen
+          antwort = await db.from("stimmen").delete().eq("post_id", post.id).eq("besitzer", ich.id);
+        } else {
+          antwort = await db.from("stimmen").upsert({
+            post_id: post.id,
+            besitzer: ich.id,
+            daumen: daumenWahl,
+            herz: herz,
+          });
+        }
+        if (antwort.error) {
+          fehler("Die Stimme konnte nicht gespeichert werden.", antwort.error);
+          return;
+        }
+        // Auch hier auf der Seite nachführen
+        stimmen = stimmen.filter(function (s) { return s.besitzer !== ich.id; });
+        if (daumenWahl !== null || herz) {
+          stimmen.push({ post_id: post.id, besitzer: ich.id, daumen: daumenWahl, herz: herz });
+        }
+        zeigeStimmen();
       }
 
       // Jeder darf pro Bild nur einmal abstimmen.
       // Nochmals auf denselben Daumen klicken nimmt die Stimme wieder weg.
-      function stimmeAb(richtung) {
-        const stimmen = ladeStimmen(post.id);
-        if (stimmen[benutzername] === richtung) {
-          delete stimmen[benutzername];
-        } else {
-          stimmen[benutzername] = richtung;
-        }
-        speichereStimmen(post.id, stimmen);
-        zeigeDaumen();
-      }
-
-      knopfHoch.addEventListener("click", function () { stimmeAb("hoch"); });
-      knopfRunter.addEventListener("click", function () { stimmeAb("runter"); });
-      zeigeDaumen();
-
-      // Das Herz: unabhängig von den Daumen. Man kann ein Bild zusätzlich lieben ❤️
-      const knopfHerz = document.createElement("button");
-      knopfHerz.className = "herz";
-      daumen.appendChild(knopfHerz);
-
-      // Zeigt die Anzahl Herzen an. Rot, wenn man selbst ein Herz gegeben hat.
-      function zeigeHerz() {
-        const herzen = ladeStimmen(post.id + "-herz");
-        const anzahl = Object.keys(herzen).length;
-        const gegeben = herzen[benutzername] === true;
-        knopfHerz.textContent = (gegeben ? "❤️ " : "🤍 ") + anzahl;
-        knopfHerz.classList.toggle("gewaehlt", gegeben);
-      }
-
-      // Herz geben oder wieder wegnehmen
-      knopfHerz.addEventListener("click", function () {
-        const herzen = ladeStimmen(post.id + "-herz");
-        if (herzen[benutzername]) {
-          delete herzen[benutzername];
-        } else {
-          herzen[benutzername] = true;
-        }
-        speichereStimmen(post.id + "-herz", herzen);
-        zeigeHerz();
+      knopfHoch.addEventListener("click", function () {
+        const meine = meineStimme();
+        speichereStimme(meine.daumen === "hoch" ? null : "hoch", meine.herz);
       });
-      zeigeHerz();
+      knopfRunter.addEventListener("click", function () {
+        const meine = meineStimme();
+        speichereStimme(meine.daumen === "runter" ? null : "runter", meine.herz);
+      });
+      knopfHerz.addEventListener("click", function () {
+        const meine = meineStimme();
+        speichereStimme(meine.daumen, !meine.herz);
+      });
+      zeigeStimmen();
 
       // 3. Die Kommentare
       const liste = document.createElement("ul");
       liste.className = "kommentare";
       kasten.appendChild(liste);
-      for (const kommentar of ladeKommentare(post.id)) {
+      for (const kommentar of kommentare) {
         zeigeKommentar(liste, kommentar);
       }
 
@@ -192,14 +218,23 @@
       kasten.appendChild(formular);
 
       // Wenn man auf "Senden" klickt (oder Enter drückt)
-      formular.addEventListener("submit", function (event) {
+      formular.addEventListener("submit", async function (event) {
         event.preventDefault(); // Seite nicht neu laden
         const text = feld.value.trim();
         if (text === "") return;
 
-        const kommentar = { von: benutzername, text: text };
-        speichereKommentar(post.id, kommentar);
-        zeigeKommentar(liste, kommentar);
+        knopf.disabled = true;
+        const { data, error } = await db
+          .from("kommentare")
+          .insert({ post_id: post.id, von: ich.name, text: text })
+          .select()
+          .single();
+        knopf.disabled = false;
+        if (error) {
+          fehler("Der Kommentar konnte nicht gespeichert werden.", error);
+          return;
+        }
+        zeigeKommentar(liste, data);
         feld.value = "";
       });
 
@@ -216,38 +251,7 @@
       liste.appendChild(eintrag);
     }
 
-    // Kommentare werden vorerst nur in diesem Browser gespeichert
-    function ladeKommentare(postId) {
-      try {
-        return JSON.parse(localStorage.getItem("kommentare-" + postId)) || [];
-      } catch (e) {
-        return [];
-      }
-    }
-
-    // Daumen-Stimmen werden vorerst auch nur in diesem Browser gespeichert.
-    // So sieht das aus: { "Anna": "hoch", "Ben": "runter" }
-    function ladeStimmen(postId) {
-      try {
-        return JSON.parse(localStorage.getItem("stimmen-" + postId)) || {};
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function speichereStimmen(postId, stimmen) {
-      try {
-        localStorage.setItem("stimmen-" + postId, JSON.stringify(stimmen));
-      } catch (e) {}
-    }
-
-    function speichereKommentar(postId, kommentar) {
-      const alle = ladeKommentare(postId);
-      alle.push(kommentar);
-      try {
-        localStorage.setItem("kommentare-" + postId, JSON.stringify(alle));
-      } catch (e) {}
-    }
+    start();
   </script>
 </body>
 </html>

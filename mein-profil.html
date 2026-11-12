@@ -4,35 +4,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Megaphone – Mein Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=9, v=10 ...) -->
-  <link rel="stylesheet" href="style.css?v=8">
+  <title>Unsere Hunde – Mein Profil</title>
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=10, v=11 ...) -->
+  <link rel="stylesheet" href="style.css?v=9">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
   <meta name="theme-color" content="#000000">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Megaphone">
+  <meta name="apple-mobile-web-app-title" content="Unsere Hunde">
   <script src="app.js?v=1"></script>
 
-  <script src="hunde.js?v=1"></script>
-  <script src="mein-hund.js?v=1"></script>
-
-  <script>
-    // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
-    const benutzername = localStorage.getItem("name");
-    if (!benutzername) {
-      window.location.href = "index.html";
-    }
-  </script>
+  <!-- Verbindung zur Datenbank -->
+  <script src="lib/supabase-2.45.4.js"></script>
+  <script src="db.js?v=1"></script>
 </head>
 <body>
   <div class="kopfzeile">
     <a href="uebersicht.html">← Alle Hunde</a>
-    <a href="profil.html?hund=mein" id="ansehen-link">Mein Profil ansehen →</a>
+    <a href="#" id="ansehen-link" hidden>Mein Profil ansehen →</a>
   </div>
 
   <h1>Mein Profil</h1>
@@ -56,8 +49,8 @@
     <button id="profil-speichern">Speichern</button>
   </div>
 
-  <!-- 2. Neues Foto posten -->
-  <div class="formular-kasten" id="post-kasten">
+  <!-- 2. Neues Foto posten (erst, wenn der Hund gespeichert ist) -->
+  <div class="formular-kasten" id="post-kasten" hidden>
     <h2>Neues Foto posten</h2>
 
     <label for="foto-datei" class="bild-waehlen foto-waehlen">
@@ -72,66 +65,94 @@
     <button id="posten">Posten</button>
   </div>
 
-  <p class="hinweis">
-    Hinweis: Deine Fotos werden vorerst nur auf diesem Gerät gespeichert.
-    Andere sehen sie noch nicht.
-  </p>
-
   <script>
-    // Meinen Hund laden, oder einen neuen, leeren anlegen
-    let meinHund = ladeMeinenHund() || { name: "", profilbild: "", posts: [] };
+    let ich = null;
+    let meinHund = null; // aus der Datenbank, oder null, wenn es noch keinen gibt
 
     const profilbildVorschau = document.getElementById("profilbild-vorschau");
     const hundenameFeld = document.getElementById("hundename-feld");
 
-    // Was schon gespeichert ist, in die Felder schreiben
-    profilbildVorschau.src = meinHund.profilbild || LEERES_PROFILBILD;
-    hundenameFeld.value = meinHund.name;
-    zeigeOderVersteckePosten();
+    async function start() {
+      ich = await brauchtAnmeldung();
 
-    // Posten geht erst, wenn der Hund einen Namen hat
-    function zeigeOderVersteckePosten() {
-      const fertig = meinHund.name !== "";
-      document.getElementById("post-kasten").hidden = !fertig;
-      document.getElementById("ansehen-link").hidden = !fertig;
+      // Gibt es schon einen eigenen Hund?
+      const { data, error } = await db.from("hunde").select("*").eq("besitzer", ich.id).maybeSingle();
+      if (error) {
+        fehler("Dein Profil konnte nicht geladen werden.", error);
+        return;
+      }
+      meinHund = data;
+
+      profilbildVorschau.src = LEERES_PROFILBILD;
+      if (meinHund) {
+        hundenameFeld.value = meinHund.name;
+        const links = await bildLinks([meinHund.profilbild]);
+        if (links[meinHund.profilbild]) profilbildVorschau.src = links[meinHund.profilbild];
+      }
+      zeigeOderVersteckePosten();
     }
 
-    // Speichern und melden, falls der Speicher voll ist
-    function speichern() {
-      if (!speichereMeinenHund(meinHund)) {
-        alert("Der Speicher ist voll. Lösche ein paar Fotos oder nimm kleinere Bilder.");
-        return false;
+    // Posten geht erst, wenn der Hund gespeichert ist
+    function zeigeOderVersteckePosten() {
+      document.getElementById("post-kasten").hidden = !meinHund;
+      const ansehen = document.getElementById("ansehen-link");
+      ansehen.hidden = !meinHund;
+      if (meinHund) ansehen.href = "profil.html?hund=" + meinHund.id;
+    }
+
+    // Knopf während dem Hochladen sperren
+    function beschaeftigt(knopf, text) {
+      knopf.disabled = text !== null;
+      if (text !== null) {
+        knopf.dataset.alt = knopf.textContent;
+        knopf.textContent = text;
+      } else {
+        knopf.textContent = knopf.dataset.alt;
       }
-      return true;
     }
 
     // ----- Profilbild -----
     let neuesProfilbild = null;
 
-    document.getElementById("profilbild-datei").addEventListener("change", function () {
+    document.getElementById("profilbild-datei").addEventListener("change", async function () {
       const datei = this.files[0];
       if (!datei) return;
       // Profilbilder sind klein, 300 Pixel reichen
-      verkleinereFoto(datei, 300, function (bild) {
-        neuesProfilbild = bild;
-        profilbildVorschau.src = bild;
-      });
+      neuesProfilbild = await verkleinereFoto(datei, 300);
+      profilbildVorschau.src = URL.createObjectURL(neuesProfilbild);
     });
 
-    document.getElementById("profil-speichern").addEventListener("click", function () {
+    document.getElementById("profil-speichern").addEventListener("click", async function () {
       const name = hundenameFeld.value.trim();
       if (name === "") {
         alert("Bitte gib den Namen von deinem Hund ein.");
         return;
       }
-      meinHund.name = name;
+      const knopf = this;
+      beschaeftigt(knopf, "Speichert ...");
+
+      const aenderungen = { name: name };
       if (neuesProfilbild) {
-        meinHund.profilbild = neuesProfilbild;
+        const pfad = await fotoHochladen(ich.id, neuesProfilbild, "profil");
+        if (!pfad) { beschaeftigt(knopf, null); return; }
+        aenderungen.profilbild = pfad;
       }
-      if (speichern()) {
-        zeigeOderVersteckePosten();
-        alert("Gespeichert!");
+
+      // Neuer Hund oder bestehenden ändern?
+      const anfrage = meinHund
+        ? db.from("hunde").update(aenderungen).eq("id", meinHund.id)
+        : db.from("hunde").insert(aenderungen);
+      const { data, error } = await anfrage.select().single();
+
+      beschaeftigt(knopf, null);
+      if (error) {
+        fehler("Dein Hund konnte nicht gespeichert werden.", error);
+        return;
       }
+      meinHund = data;
+      neuesProfilbild = null;
+      zeigeOderVersteckePosten();
+      alert("Gespeichert!");
     });
 
     // ----- Neues Foto posten -----
@@ -139,42 +160,43 @@
     const fotoVorschau = document.getElementById("foto-vorschau");
     const fotoHinweis = document.getElementById("foto-hinweis");
 
-    document.getElementById("foto-datei").addEventListener("change", function () {
+    document.getElementById("foto-datei").addEventListener("change", async function () {
       const datei = this.files[0];
       if (!datei) return;
-      // Post-Fotos dürfen etwas grösser sein: 800 Pixel
-      verkleinereFoto(datei, 800, function (bild) {
-        neuesFoto = bild;
-        fotoVorschau.src = bild;
-        fotoVorschau.hidden = false;
-        fotoHinweis.textContent = "📷 Anderes Foto wählen";
-      });
+      // Post-Fotos dürfen etwas grösser sein: 1200 Pixel
+      neuesFoto = await verkleinereFoto(datei, 1200);
+      fotoVorschau.src = URL.createObjectURL(neuesFoto);
+      fotoVorschau.hidden = false;
+      fotoHinweis.textContent = "📷 Anderes Foto wählen";
     });
 
-    document.getElementById("posten").addEventListener("click", function () {
+    document.getElementById("posten").addEventListener("click", async function () {
       if (!neuesFoto) {
         alert("Bitte wähle zuerst ein Foto aus.");
         return;
       }
-      const beschreibung = document.getElementById("beschreibung-feld").value.trim();
+      const knopf = this;
+      beschaeftigt(knopf, "Lädt hoch ...");
 
-      meinHund.posts.push({
-        // Eine eindeutige id aus der aktuellen Zeit
-        id: "mein-" + benutzername + "-" + Date.now(),
-        bild: neuesFoto,
-        // Datum mit Uhrzeit, damit das neuste Foto sicher zuoberst kommt
-        datum: new Date().toISOString(),
-        beschreibung: beschreibung,
+      const pfad = await fotoHochladen(ich.id, neuesFoto, "post");
+      if (!pfad) { beschaeftigt(knopf, null); return; }
+
+      const { error } = await db.from("posts").insert({
+        hund_id: meinHund.id,
+        bild: pfad,
+        beschreibung: document.getElementById("beschreibung-feld").value.trim(),
       });
 
-      if (speichern()) {
-        // Direkt zum eigenen Profil, dort ist das neue Foto zuoberst
-        window.location.href = "profil.html?hund=mein";
-      } else {
-        // Hat nicht geklappt: den Post wieder wegnehmen
-        meinHund.posts.pop();
+      beschaeftigt(knopf, null);
+      if (error) {
+        fehler("Das Foto konnte nicht gepostet werden.", error);
+        return;
       }
+      // Direkt zum eigenen Profil, dort ist das neue Foto zuoberst
+      window.location.href = "profil.html?hund=" + meinHund.id;
     });
+
+    start();
   </script>
 </body>
 </html>

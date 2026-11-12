@@ -277,9 +277,17 @@ h1 {
   margin: 0 0 6px 0;
 }
 
-.formular-kasten input[type="text"] {
+.formular-kasten input[type="text"],
+.formular-kasten input[type="email"],
+.formular-kasten input[type="password"] {
   font-size: 18px;
   padding: 10px;
+}
+
+/* Knopf gesperrt, z.B. während dem Hochladen */
+.formular-kasten button:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .formular-kasten button {
