@@ -1,8 +1,8 @@
 // Verbindung zu unserer Datenbank (Supabase) und ein paar Helfer,
 // die alle Seiten brauchen.
 //
-// Der "publishable key" darf öffentlich sein. Geschützt sind die Daten
-// trotzdem: Supabase gibt nur angemeldeten Benutzern etwas heraus.
+// Der "publishable key" darf öffentlich sein. Lesen dürfen alle,
+// aber posten, kommentieren und ändern erlaubt Supabase nur angemeldeten Benutzern.
 // (Den "secret key" NIE hier hineinschreiben!)
 
 const SUPABASE_URL = "https://jzuemvwtlsxzazichsjg.supabase.co";
@@ -20,23 +20,35 @@ const LEERES_PROFILBILD =
       "</svg>"
   );
 
-// Prüft, ob man angemeldet ist und einen Namen hat.
-// Wenn nicht: zurück zur Anmeldung.
-// Gibt { id, name } von der angemeldeten Person zurück.
-async function brauchtAnmeldung() {
+// Link zur Anmeldung. Nach dem Anmelden geht es zurück zur aktuellen Seite.
+function anmeldenLink() {
+  const seite = window.location.pathname.split("/").pop() + window.location.search;
+  return "anmelden.html?zurueck=" + encodeURIComponent(seite);
+}
+
+// Wer ist angemeldet? Gibt { id, name } zurück, oder null, wenn niemand.
+// Wer angemeldet ist, aber noch keinen Namen gewählt hat, kommt zur Anmeldung.
+async function aktuellerBenutzer() {
   const { data } = await db.auth.getSession();
-  if (!data.session) {
-    window.location.replace("index.html");
-    return new Promise(function () {}); // hier nicht weitermachen
-  }
+  if (!data.session) return null;
   const id = data.session.user.id;
   const { data: ich } = await db.from("benutzer").select("name").eq("id", id).maybeSingle();
   if (!ich) {
-    // Angemeldet, aber noch kein Name gewählt
-    window.location.replace("index.html");
-    return new Promise(function () {});
+    window.location.replace(anmeldenLink());
+    return new Promise(function () {}); // hier nicht weitermachen
   }
   return { id: id, name: ich.name };
+}
+
+// Für Seiten, die man nur angemeldet benutzen darf (z.B. Mein Profil).
+// Wenn niemand angemeldet ist: zur Anmeldung.
+async function brauchtAnmeldung() {
+  const ich = await aktuellerBenutzer();
+  if (!ich) {
+    window.location.replace(anmeldenLink());
+    return new Promise(function () {});
+  }
+  return ich;
 }
 
 async function abmelden() {
@@ -50,19 +62,11 @@ function fehler(was, error) {
   alert(was + " Bitte versuche es nochmals.");
 }
 
-// Die Fotos sind privat. Für angemeldete Benutzer holen wir Links,
-// die eine Stunde lang funktionieren.
-// Bekommt eine Liste von Pfaden, gibt { pfad: link } zurück.
-async function bildLinks(pfade) {
-  const eindeutig = Array.from(new Set(pfade.filter(Boolean)));
-  if (eindeutig.length === 0) return {};
-  const { data, error } = await db.storage.from("fotos").createSignedUrls(eindeutig, 3600);
-  if (error) console.error("Bilder konnten nicht geladen werden", error);
-  const links = {};
-  for (const eintrag of data || []) {
-    if (eintrag.signedUrl) links[eintrag.path] = eintrag.signedUrl;
-  }
-  return links;
+// Macht aus dem Pfad eines Fotos (z.B. "beispiele/bello.jpg") einen Link.
+// Die Fotos sind öffentlich. Ohne Foto gibt es "".
+function bildLink(pfad) {
+  if (!pfad) return "";
+  return db.storage.from("fotos").getPublicUrl(pfad).data.publicUrl;
 }
 
 // Ein Foto verkleinern, damit es schnell hochlädt.

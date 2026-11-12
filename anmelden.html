@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<!-- Die Anmeldung. Nur nötig, um zu posten, zu kommentieren oder abzustimmen. -->
+<html lang="de">
+<head>
+  <!-- Damit Umlaute wie ä, ö, ü richtig angezeigt werden -->
+  <meta charset="UTF-8">
+  <!-- Damit die Seite auch auf dem Handy gut aussieht -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Dieser Titel steht oben im Browser-Tab -->
+  <title>Unsere Hunde – Anmelden</title>
+  <!-- Hier holen wir unsere Stil-Datei. Bei Änderungen an style.css die Zahl erhöhen (v=11, v=12 ...) -->
+  <link rel="stylesheet" href="style.css?v=10">
+
+  <!-- Damit man die Seite als App installieren kann (PWA) -->
+  <link rel="manifest" href="manifest.json?v=2">
+  <meta name="theme-color" content="#000000">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Unsere Hunde">
+  <script src="app.js?v=1"></script>
+
+  <!-- Verbindung zur Datenbank -->
+  <script src="lib/supabase-2.45.4.js"></script>
+  <script src="db.js?v=2"></script>
+</head>
+<body>
+  <div class="kopfzeile">
+    <a href="index.html">← Alle Hunde</a>
+  </div>
+
+  <h1>Unsere Hunde</h1>
+
+  <!-- Schritt 1: Mit E-Mail und Passwort anmelden -->
+  <!-- Konten gibt es nur, wenn der Admin sie in Supabase angelegt hat. -->
+  <form class="formular-kasten" id="anmelde-formular" hidden>
+    <h2>Anmelden</h2>
+    <label for="email">E-Mail</label>
+    <input type="email" id="email" autocomplete="username" required>
+    <label for="passwort">Passwort</label>
+    <input type="password" id="passwort" autocomplete="current-password" required>
+    <button type="submit" id="anmelde-knopf">Anmelden</button>
+  </form>
+
+  <!-- Schritt 2 (nur beim ersten Mal): Namen wählen, der bei Kommentaren steht -->
+  <form class="formular-kasten" id="name-formular" hidden>
+    <h2>Wie heisst du?</h2>
+    <label for="name">Dieser Name steht bei deinen Kommentaren.</label>
+    <input type="text" id="name" placeholder="Dein Name" required>
+    <button type="submit">Los!</button>
+  </form>
+
+  <script>
+    const anmeldeFormular = document.getElementById("anmelde-formular");
+    const nameFormular = document.getElementById("name-formular");
+
+    // Wohin nach dem Anmelden? Zurück zur Seite, von der man kam (sonst Übersicht).
+    // Nur Seiten von uns erlauben, z.B. "profil.html?hund=..."
+    let zurueck = new URLSearchParams(window.location.search).get("zurueck") || "";
+    if (!/^[a-z-]+\.html(\?[\w=&-]*)?$/.test(zurueck) || zurueck.startsWith("anmelden.html")) {
+      zurueck = "index.html";
+    }
+
+    // Wie geht es weiter, wenn man angemeldet ist?
+    // Hat man schon einen Namen → Übersicht. Sonst → Namen wählen.
+    async function weiter(benutzerId) {
+      const { data: ich, error } = await db.from("benutzer").select("name").eq("id", benutzerId).maybeSingle();
+      if (error) {
+        fehler("Die Daten konnten nicht geladen werden.", error);
+        return;
+      }
+      if (ich) {
+        window.location.replace(zurueck);
+      } else {
+        anmeldeFormular.hidden = true;
+        nameFormular.hidden = false;
+        document.getElementById("name").focus();
+      }
+    }
+
+    // Beim Öffnen: Ist man schon angemeldet?
+    db.auth.getSession().then(function (antwort) {
+      const session = antwort.data.session;
+      if (session) {
+        weiter(session.user.id);
+      } else {
+        anmeldeFormular.hidden = false;
+      }
+    });
+
+    // Schritt 1: Anmelden
+    anmeldeFormular.addEventListener("submit", async function (event) {
+      event.preventDefault(); // Seite nicht neu laden
+      const knopf = document.getElementById("anmelde-knopf");
+      knopf.disabled = true;
+      knopf.textContent = "Einen Moment ...";
+
+      const { data, error } = await db.auth.signInWithPassword({
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("passwort").value,
+      });
+
+      knopf.disabled = false;
+      knopf.textContent = "Anmelden";
+      if (error) {
+        alert("E-Mail oder Passwort stimmt nicht.");
+        return;
+      }
+      weiter(data.user.id);
+    });
+
+    // Schritt 2: Namen speichern
+    nameFormular.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      if (name === "") return;
+
+      const { error } = await db.from("benutzer").insert({ name: name });
+      if (error) {
+        fehler("Der Name konnte nicht gespeichert werden.", error);
+        return;
+      }
+      window.location.replace(zurueck);
+    });
+  </script>
+</body>
+</html>

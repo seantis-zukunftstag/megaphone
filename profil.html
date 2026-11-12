@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<!-- Das ist die Profilseite von einem Hund. Welcher Hund, steht in der Adresse: profil.html?hund=... -->
+<!-- Das ist die Profilseite von einem Hund. Welcher Hund, steht in der Adresse: profil.html?hund=...
+     Alle dürfen sie sehen. Kommentieren und abstimmen geht nur angemeldet. -->
 <html lang="de">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unsere Hunde – Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=10, v=11 ...) -->
-  <link rel="stylesheet" href="style.css?v=9">
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=11, v=12 ...) -->
+  <link rel="stylesheet" href="style.css?v=10">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
   <link rel="manifest" href="manifest.json?v=2">
@@ -20,12 +21,12 @@
 
   <!-- Verbindung zur Datenbank -->
   <script src="lib/supabase-2.45.4.js"></script>
-  <script src="db.js?v=1"></script>
+  <script src="db.js?v=2"></script>
 </head>
 <body>
   <!-- Oben: Zurück-Link -->
   <div class="kopfzeile">
-    <a href="uebersicht.html">← Alle Hunde</a>
+    <a href="index.html">← Alle Hunde</a>
     <!-- Nur beim eigenen Hund sichtbar -->
     <a href="mein-profil.html" id="bearbeiten-link" hidden>📷 Foto posten</a>
   </div>
@@ -40,11 +41,11 @@
   <div id="posts"></div>
 
   <script>
-    let ich = null;
+    let ich = null; // null = niemand angemeldet
 
     async function start() {
-      // Nur für angemeldete Benutzer
-      ich = await brauchtAnmeldung();
+      // Wer ist angemeldet? (Die Seite ist auch ohne Anmeldung sichtbar)
+      ich = await aktuellerBenutzer();
 
       // Welcher Hund? Das steht in der Adresse nach "?hund="
       const hundId = new URLSearchParams(window.location.search).get("hund");
@@ -64,10 +65,9 @@
 
       // Kommentare und Stimmen zu allen Posts holen
       const postIds = posts.map(function (p) { return p.id; });
-      const [kommentarAntwort, stimmenAntwort, links] = await Promise.all([
+      const [kommentarAntwort, stimmenAntwort] = await Promise.all([
         db.from("kommentare").select("*").in("post_id", postIds).order("erstellt"),
         db.from("stimmen").select("*").in("post_id", postIds),
-        bildLinks([hund.profilbild].concat(posts.map(function (p) { return p.bild; }))),
       ]);
       const kommentare = kommentarAntwort.data || [];
       const stimmen = stimmenAntwort.data || [];
@@ -75,13 +75,13 @@
       // Name und Profilbild oben anzeigen
       document.getElementById("hundename").textContent = hund.name;
       const profilbild = document.getElementById("profilbild");
-      profilbild.src = links[hund.profilbild] || LEERES_PROFILBILD;
+      profilbild.src = bildLink(hund.profilbild) || LEERES_PROFILBILD;
       profilbild.alt = "Foto von " + hund.name;
       profilbild.hidden = false;
       document.title = "Unsere Hunde – " + hund.name;
 
       // Beim eigenen Hund: Link zum Fotos-Posten zeigen
-      if (hund.besitzer === ich.id) {
+      if (ich && hund.besitzer === ich.id) {
         document.getElementById("bearbeiten-link").hidden = false;
       }
       if (posts.length === 0) {
@@ -95,7 +95,7 @@
       for (const post of posts) {
         zeigePost(
           post,
-          links[post.bild],
+          bildLink(post.bild),
           kommentare.filter(function (k) { return k.post_id === post.id; }),
           stimmen.filter(function (s) { return s.post_id === post.id; })
         );
@@ -139,7 +139,9 @@
 
       // Meine eigene Stimme bei diesem Post (oder eine leere)
       function meineStimme() {
-        return stimmen.find(function (s) { return s.besitzer === ich.id; }) || { daumen: null, herz: false };
+        const leer = { daumen: null, herz: false };
+        if (!ich) return leer;
+        return stimmen.find(function (s) { return s.besitzer === ich.id; }) || leer;
       }
 
       // Zahlen anzeigen und markieren, was man selbst gewählt hat
@@ -156,6 +158,11 @@
 
       // Neue Stimme in der Datenbank speichern
       async function speichereStimme(daumenWahl, herz) {
+        // Abstimmen geht nur angemeldet
+        if (!ich) {
+          window.location.href = anmeldenLink();
+          return;
+        }
         let antwort;
         if (daumenWahl === null && !herz) {
           // Nichts mehr gewählt: Stimme löschen
@@ -204,7 +211,18 @@
         zeigeKommentar(liste, kommentar);
       }
 
-      // 4. Neuen Kommentar schreiben
+      // 4. Neuen Kommentar schreiben (nur angemeldet)
+      if (!ich) {
+        const hinweis = document.createElement("p");
+        hinweis.className = "kommentar-eingabe";
+        const link = document.createElement("a");
+        link.href = anmeldenLink();
+        link.textContent = "Anmelden, um zu kommentieren";
+        hinweis.appendChild(link);
+        kasten.appendChild(hinweis);
+        document.getElementById("posts").appendChild(kasten);
+        return;
+      }
       const formular = document.createElement("form");
       formular.className = "kommentar-eingabe";
       const feld = document.createElement("input");

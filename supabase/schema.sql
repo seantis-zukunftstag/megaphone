@@ -1,8 +1,10 @@
 -- =====================================================================
 -- Datenbank für "Unsere Hunde"
 --
--- Nur angemeldete, vorher freigegebene Benutzer dürfen etwas sehen oder tun.
--- Konten legt der Admin im Supabase-Dashboard an (Authentication → Users).
+-- Lesen dürfen alle (Hunde, Posts, Fotos, Kommentare, Stimmen).
+-- Posten, kommentieren, abstimmen und ändern dürfen nur angemeldete,
+-- vorher freigegebene Benutzer. Konten legt der Admin im Supabase-Dashboard
+-- an (Authentication → Users). Die Registrierung muss ausgeschaltet sein.
 --
 -- So benutzen: In Supabase links auf "SQL Editor" → "New query",
 -- diesen ganzen Text hineinkopieren und auf "Run" klicken.
@@ -68,8 +70,8 @@ create table stimmen (
 
 
 -- ---------- Wer darf was? (Row Level Security) ----------
--- Ohne Anmeldung: gar nichts.
--- Angemeldet: alles sehen, aber nur Eigenes anlegen, ändern und löschen.
+-- Ohne Anmeldung: nur lesen.
+-- Angemeldet: zusätzlich Eigenes anlegen, ändern und löschen.
 
 alter table benutzer   enable row level security;
 alter table hunde      enable row level security;
@@ -81,11 +83,11 @@ create policy "Benutzer sehen"             on benutzer for select to authenticat
 create policy "Eigenen Namen anlegen"      on benutzer for insert to authenticated with check (ist_freigegeben() and id = auth.uid());
 create policy "Eigenen Namen ändern"       on benutzer for update to authenticated using (ist_freigegeben() and id = auth.uid());
 
-create policy "Hunde sehen"                on hunde for select to authenticated using (ist_freigegeben());
+create policy "Alle sehen Hunde"           on hunde for select to anon, authenticated using (true);
 create policy "Eigenen Hund anlegen"       on hunde for insert to authenticated with check (ist_freigegeben() and besitzer = auth.uid());
 create policy "Eigenen Hund ändern"        on hunde for update to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 
-create policy "Posts sehen"                on posts for select to authenticated using (ist_freigegeben());
+create policy "Alle sehen Posts"           on posts for select to anon, authenticated using (true);
 create policy "Beim eigenen Hund posten"   on posts for insert to authenticated with check (
   ist_freigegeben()
   and besitzer = auth.uid()
@@ -93,23 +95,22 @@ create policy "Beim eigenen Hund posten"   on posts for insert to authenticated 
 );
 create policy "Eigene Posts löschen"       on posts for delete to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 
-create policy "Kommentare sehen"           on kommentare for select to authenticated using (ist_freigegeben());
+create policy "Alle sehen Kommentare"      on kommentare for select to anon, authenticated using (true);
 create policy "Kommentar schreiben"        on kommentare for insert to authenticated with check (ist_freigegeben() and besitzer = auth.uid());
 create policy "Eigene Kommentare löschen"  on kommentare for delete to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 
-create policy "Stimmen sehen"              on stimmen for select to authenticated using (ist_freigegeben());
+create policy "Alle sehen Stimmen"         on stimmen for select to anon, authenticated using (true);
 create policy "Eigene Stimme abgeben"      on stimmen for insert to authenticated with check (ist_freigegeben() and besitzer = auth.uid());
 create policy "Eigene Stimme ändern"       on stimmen for update to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 create policy "Eigene Stimme löschen"      on stimmen for delete to authenticated using (ist_freigegeben() and besitzer = auth.uid());
 
 
--- ---------- Speicher für die Fotos (privat) ----------
--- Der Ordner "fotos" ist NICHT öffentlich. Die App holt für angemeldete
--- Benutzer zeitlich begrenzte Links zu den Bildern.
+-- ---------- Speicher für die Fotos ----------
+-- Der Ordner "fotos" ist öffentlich lesbar.
 -- Hochladen darf man nur in den eigenen Unterordner (= eigene Benutzer-ID).
 -- Die Beispielbilder kommen in den Unterordner "beispiele/" (lädt der Admin hoch).
 
-insert into storage.buckets (id, name, public) values ('fotos', 'fotos', false);
+insert into storage.buckets (id, name, public) values ('fotos', 'fotos', true);
 
 create policy "Fotos sehen" on storage.objects for select to authenticated
   using (bucket_id = 'fotos' and ist_freigegeben());
@@ -157,7 +158,8 @@ from neu join (values
 
 -- ---------- Zugriffsrechte für angemeldete Benutzer ----------
 -- Neue Supabase-Projekte geben Tabellen nicht automatisch frei.
--- Nur angemeldete Benutzer ("authenticated") bekommen Rechte, "anon" bekommt nichts.
+-- Ohne Anmeldung ("anon"): nur lesen. Angemeldet ("authenticated"): mehr.
 -- Was genau erlaubt ist, regeln die Policies oben.
 
+grant select on hunde, posts, kommentare, stimmen to anon;
 grant select, insert, update, delete on benutzer, hunde, posts, kommentare, stimmen to authenticated;

@@ -348,3 +348,8 @@ h1 {
 .mein-profil {
   border: 2px solid #22e9f3;
 }
+
+/* "Anmelden, um zu kommentieren" unter einem Post */
+.kommentar-eingabe a {
+  color: #22e9f3;
+}

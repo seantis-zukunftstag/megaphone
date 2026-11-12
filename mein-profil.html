@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unsere Hunde – Mein Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=10, v=11 ...) -->
-  <link rel="stylesheet" href="style.css?v=9">
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=11, v=12 ...) -->
+  <link rel="stylesheet" href="style.css?v=10">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
   <link rel="manifest" href="manifest.json?v=2">
@@ -20,11 +20,11 @@
 
   <!-- Verbindung zur Datenbank -->
   <script src="lib/supabase-2.45.4.js"></script>
-  <script src="db.js?v=1"></script>
+  <script src="db.js?v=2"></script>
 </head>
 <body>
   <div class="kopfzeile">
-    <a href="uebersicht.html">← Alle Hunde</a>
+    <a href="index.html">← Alle Hunde</a>
     <a href="#" id="ansehen-link" hidden>Mein Profil ansehen →</a>
   </div>
 
@@ -86,8 +86,7 @@
       profilbildVorschau.src = LEERES_PROFILBILD;
       if (meinHund) {
         hundenameFeld.value = meinHund.name;
-        const links = await bildLinks([meinHund.profilbild]);
-        if (links[meinHund.profilbild]) profilbildVorschau.src = links[meinHund.profilbild];
+        if (meinHund.profilbild) profilbildVorschau.src = bildLink(meinHund.profilbild);
       }
       zeigeOderVersteckePosten();
     }

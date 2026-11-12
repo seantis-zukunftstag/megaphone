@@ -1,100 +1,13 @@
 <!DOCTYPE html>
-<!-- Das ist die Übersichtsseite mit allen Hunden. Man kommt hierher, nachdem man sich angemeldet hat. -->
+<!-- Die Übersicht ist jetzt die Startseite (index.html).
+     Diese Seite gibt es nur noch, damit alte Links und Lesezeichen weiter funktionieren. -->
 <html lang="de">
 <head>
-  <!-- Damit Umlaute wie ä, ö, ü richtig angezeigt werden -->
   <meta charset="UTF-8">
-  <!-- Damit die Seite auch auf dem Handy gut aussieht -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Dieser Titel steht oben im Browser-Tab -->
+  <meta http-equiv="refresh" content="0; url=index.html">
   <title>Unsere Hunde</title>
-  <!-- "?v=9": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=10, v=11 ...).
-       Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=9">
-
-  <!-- Damit man die Seite als App installieren kann (PWA) -->
-  <link rel="manifest" href="manifest.json?v=2">
-  <meta name="theme-color" content="#000000">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="Unsere Hunde">
-  <script src="app.js?v=1"></script>
-
-  <!-- Verbindung zur Datenbank -->
-  <script src="lib/supabase-2.45.4.js"></script>
-  <script src="db.js?v=1"></script>
 </head>
 <body>
-  <!-- Oben: Begrüssung, Mein Profil und Abmelden -->
-  <div class="kopfzeile">
-    <span id="begruessung"></span>
-    <span>
-      <a href="mein-profil.html">Mein Profil</a>
-      ·
-      <a href="#" onclick="abmelden()">Abmelden</a>
-    </span>
-  </div>
-
-  <h1>Unsere Hunde</h1>
-
-  <!-- Erscheint nur, wenn das Handy die App installieren kann -->
-  <div class="name-eingabe">
-    <button class="installieren-knopf" onclick="appInstallieren()" hidden>📲 App installieren</button>
-  </div>
-
-  <!-- Die Liste mit allen Hunde-Profilen. Sie wird aus der Datenbank gefüllt. -->
-  <p class="hinweis" id="laden">Lade Hunde ...</p>
-  <ul class="profile" id="liste"></ul>
-
-  <script>
-    async function start() {
-      // Nur für angemeldete Benutzer
-      const ich = await brauchtAnmeldung();
-      document.getElementById("begruessung").textContent = "Hallo " + ich.name;
-
-      // Alle Hunde aus der Datenbank holen
-      const { data: hunde, error } = await db.from("hunde").select("id, name, profilbild, besitzer").order("name");
-      document.getElementById("laden").hidden = true;
-      if (error) {
-        fehler("Die Hunde konnten nicht geladen werden.", error);
-        return;
-      }
-
-      // Den eigenen Hund ganz nach oben
-      hunde.sort(function (a, b) {
-        return (b.besitzer === ich.id) - (a.besitzer === ich.id);
-      });
-
-      // Links zu den Profilbildern holen
-      const links = await bildLinks(hunde.map(function (h) { return h.profilbild; }));
-
-      for (const hund of hunde) {
-        const meiner = hund.besitzer === ich.id;
-
-        const eintrag = document.createElement("li");
-        eintrag.className = meiner ? "profil mein-profil" : "profil";
-
-        const link = document.createElement("a");
-        link.href = "profil.html?hund=" + hund.id;
-
-        const bild = document.createElement("img");
-        bild.src = links[hund.profilbild] || LEERES_PROFILBILD;
-        bild.alt = "Foto von " + hund.name;
-
-        const name = document.createElement("span");
-        name.className = "hundename";
-        name.textContent = meiner ? hund.name + " (mein Hund)" : hund.name;
-
-        link.appendChild(bild);
-        link.appendChild(name);
-        eintrag.appendChild(link);
-        document.getElementById("liste").appendChild(eintrag);
-      }
-    }
-
-    start();
-  </script>
+  <a href="index.html">Weiter zu Unsere Hunde</a>
 </body>
 </html>
