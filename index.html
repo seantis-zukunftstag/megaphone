@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Das ist unsere Startseite. GitHub Pages zeigt automatisch die Datei "index.html" an. -->
+<!-- Das ist unsere Startseite: die Anmeldung. GitHub Pages zeigt automatisch die Datei "index.html" an. -->
 <html lang="de">
 <head>
   <!-- Damit Umlaute wie ä, ö, ü richtig angezeigt werden -->
@@ -7,43 +7,45 @@
   <!-- Damit die Seite auch auf dem Handy gut aussieht -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Dieser Titel steht oben im Browser-Tab -->
-  <title>Megaphone</title>
-  <!-- Hier holen wir unsere Stil-Datei, damit die Seite schön aussieht -->
-  <link rel="stylesheet" href="style.css">
+  <title>Megaphone – Anmelden</title>
+  <!-- Hier holen wir unsere Stil-Datei. Bei Änderungen an style.css die Zahl erhöhen (v=4, v=5 ...) -->
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <!-- Alles im "body" sieht man auf der Seite -->
-  <h1>Unsere Hunde</h1>
+  <h1>Hallo!</h1>
 
-  <!-- Die Liste mit allen Hunde-Profilen -->
-  <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern -->
-  <ul class="profile">
+  <!-- Hier meldet man sich mit seinem Namen an -->
+  <div class="name-eingabe">
+    <input type="text" id="name" placeholder="Dein Name">
+    <button onclick="anmelden()">Los!</button>
+  </div>
 
-    <li class="profil">
-      <img src="bilder/bello.jpg" alt="Foto von Bello">
-      <span class="hundename">Bello</span>
-    </li>
+  <script>
+    // Diese Funktion wird ausgeführt, wenn man auf "Los!" klickt
+    function anmelden() {
+      // Den Namen aus dem Eingabefeld holen (Leerzeichen am Rand weglassen)
+      const name = document.getElementById("name").value.trim();
 
-    <li class="profil">
-      <img src="bilder/luna.jpg" alt="Foto von Luna">
-      <span class="hundename">Luna</span>
-    </li>
+      // Ohne Namen geht es nicht weiter
+      if (name === "") {
+        alert("Bitte gib deinen Namen ein.");
+        return;
+      }
 
-    <li class="profil">
-      <img src="bilder/max.jpg" alt="Foto von Max">
-      <span class="hundename">Max</span>
-    </li>
+      // Den Namen im Browser speichern, damit die Übersichtsseite ihn kennt
+      localStorage.setItem("name", name);
 
-    <li class="profil">
-      <img src="bilder/kira.jpg" alt="Foto von Kira">
-      <span class="hundename">Kira</span>
-    </li>
+      // Weiter zur Übersichtsseite
+      window.location.href = "uebersicht.html";
+    }
 
-    <li class="profil">
-      <img src="bilder/rocky.jpg" alt="Foto von Rocky">
-      <span class="hundename">Rocky</span>
-    </li>
-
-  </ul>
+    // Damit es auch mit der Enter-Taste funktioniert
+    document.getElementById("name").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        anmelden();
+      }
+    });
+  </script>
 </body>
 </html>

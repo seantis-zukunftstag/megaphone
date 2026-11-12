@@ -4,8 +4,8 @@
 body {
   /* Hintergrundfarbe der Seite */
   background-color: #000000;
-  /* Farbe vom Text */
-  color: #333333;
+  /* Farbe vom Text (hell, damit man ihn auf dem schwarzen Hintergrund lesen kann) */
+  color: #eeeeee;
   /* Schriftart */
   font-family: Arial, Helvetica, sans-serif;
   /* Abstand zum Rand */
@@ -77,6 +77,8 @@ h1 {
   border-radius: 50%;
   /* Rahmen um das Bild */
   border: 3px solid #22e9f3;
+  /* Das Bild nie zusammendrücken, auch wenn der Platz knapp ist */
+  flex-shrink: 0;
 }
 
 /* Der Name vom Hund */
@@ -84,4 +86,40 @@ h1 {
   color: #ffffff;
   font-size: 28px;
   font-weight: bold;
+}
+
+/* ===== Handy ===== */
+/* Diese Regeln gelten nur, wenn der Bildschirm schmaler als 600px ist */
+@media (max-width: 600px) {
+  body {
+    /* Weniger Rand, damit mehr Platz für die Profile bleibt */
+    margin: 16px;
+  }
+
+  h1 {
+    font-size: 32px;
+  }
+
+  .profil img {
+    width: 64px;
+    height: 64px;
+  }
+
+  .hundename {
+    font-size: 22px;
+  }
+}
+
+/* ===== Kopfzeile auf der Übersicht ===== */
+/* "Hallo Name" links, "Abmelden" rechts */
+.kopfzeile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 20px;
+}
+
+/* Der Abmelden-Link */
+.kopfzeile a {
+  color: #22e9f3;
 }

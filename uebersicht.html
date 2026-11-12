@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<!-- Das ist die Übersichtsseite mit allen Hunden. Man kommt hierher, nachdem man sich angemeldet hat. -->
+<html lang="de">
+<head>
+  <!-- Damit Umlaute wie ä, ö, ü richtig angezeigt werden -->
+  <meta charset="UTF-8">
+  <!-- Damit die Seite auch auf dem Handy gut aussieht -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Dieser Titel steht oben im Browser-Tab -->
+  <title>Megaphone</title>
+  <!-- Hier holen wir unsere Stil-Datei, damit die Seite schön aussieht -->
+  <!-- "?v=3": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=4, v=5 ...).
+       Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
+  <link rel="stylesheet" href="style.css?v=3">
+
+  <script>
+    // Den Namen holen, den man bei der Anmeldung eingegeben hat
+    const benutzername = localStorage.getItem("name");
+    // Wer nicht angemeldet ist, kommt zurück zur Anmeldung
+    if (!benutzername) {
+      window.location.href = "index.html";
+    }
+  </script>
+</head>
+<body>
+  <!-- Alles im "body" sieht man auf der Seite -->
+
+  <!-- Oben: Begrüssung und Abmelden -->
+  <div class="kopfzeile">
+    <span id="begruessung"></span>
+    <a href="#" onclick="abmelden()">Abmelden</a>
+  </div>
+
+  <h1>Unsere Hunde</h1>
+
+  <!-- Die Liste mit allen Hunde-Profilen -->
+  <!-- Für einen neuen Hund: einen ganzen <li>...</li>-Block kopieren und Bild + Name ändern -->
+  <ul class="profile">
+
+    <li class="profil">
+      <img src="bilder/bello.jpg" alt="Foto von Bello">
+      <span class="hundename">Bello</span>
+    </li>
+
+    <li class="profil">
+      <img src="bilder/luna.jpg" alt="Foto von Luna">
+      <span class="hundename">Luna</span>
+    </li>
+
+    <li class="profil">
+      <img src="bilder/max.jpg" alt="Foto von Max">
+      <span class="hundename">Max</span>
+    </li>
+
+    <li class="profil">
+      <img src="bilder/kira.jpg" alt="Foto von Kira">
+      <span class="hundename">Kira</span>
+    </li>
+
+    <li class="profil">
+      <img src="bilder/rocky.jpg" alt="Foto von Rocky">
+      <span class="hundename">Rocky</span>
+    </li>
+
+  </ul>
+
+  <script>
+    // "Hallo" und den Namen oben auf die Seite schreiben
+    document.getElementById("begruessung").textContent = "Hallo " + benutzername;
+
+    // Beim Abmelden den Namen vergessen und zurück zur Anmeldung
+    function abmelden() {
+      localStorage.removeItem("name");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>
