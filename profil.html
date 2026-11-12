@@ -5,8 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Megaphone – Profil</title>
-  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=5, v=6 ...) -->
-  <link rel="stylesheet" href="style.css?v=4">
+  <!-- Bei Änderungen an style.css die Zahl erhöhen (v=8, v=9 ...) -->
+  <link rel="stylesheet" href="style.css?v=7">
 
   <!-- Hier holen wir die Daten von allen Hunden -->
   <script src="hunde.js?v=1"></script>
@@ -83,6 +83,69 @@
       datum.textContent = new Date(post.datum).toLocaleDateString("de-CH");
       kasten.appendChild(datum);
 
+      // Daumen hoch und Daumen runter
+      const daumen = document.createElement("div");
+      daumen.className = "daumen";
+      const knopfHoch = document.createElement("button");
+      const knopfRunter = document.createElement("button");
+      daumen.appendChild(knopfHoch);
+      daumen.appendChild(knopfRunter);
+      kasten.appendChild(daumen);
+
+      // Zeigt die Zahlen auf den Knöpfen an und markiert, was man selbst gewählt hat
+      function zeigeDaumen() {
+        const stimmen = ladeStimmen(post.id);
+        const alle = Object.values(stimmen);
+        knopfHoch.textContent = "👍 " + alle.filter(function (s) { return s === "hoch"; }).length;
+        knopfRunter.textContent = "👎 " + alle.filter(function (s) { return s === "runter"; }).length;
+        knopfHoch.classList.toggle("gewaehlt", stimmen[benutzername] === "hoch");
+        knopfRunter.classList.toggle("gewaehlt", stimmen[benutzername] === "runter");
+      }
+
+      // Jeder darf pro Bild nur einmal abstimmen.
+      // Nochmals auf denselben Daumen klicken nimmt die Stimme wieder weg.
+      function stimmeAb(richtung) {
+        const stimmen = ladeStimmen(post.id);
+        if (stimmen[benutzername] === richtung) {
+          delete stimmen[benutzername];
+        } else {
+          stimmen[benutzername] = richtung;
+        }
+        speichereStimmen(post.id, stimmen);
+        zeigeDaumen();
+      }
+
+      knopfHoch.addEventListener("click", function () { stimmeAb("hoch"); });
+      knopfRunter.addEventListener("click", function () { stimmeAb("runter"); });
+      zeigeDaumen();
+
+      // Das Herz: unabhängig von den Daumen. Man kann ein Bild zusätzlich lieben ❤️
+      const knopfHerz = document.createElement("button");
+      knopfHerz.className = "herz";
+      daumen.appendChild(knopfHerz);
+
+      // Zeigt die Anzahl Herzen an. Rot, wenn man selbst ein Herz gegeben hat.
+      function zeigeHerz() {
+        const herzen = ladeStimmen(post.id + "-herz");
+        const anzahl = Object.keys(herzen).length;
+        const gegeben = herzen[benutzername] === true;
+        knopfHerz.textContent = (gegeben ? "❤️ " : "🤍 ") + anzahl;
+        knopfHerz.classList.toggle("gewaehlt", gegeben);
+      }
+
+      // Herz geben oder wieder wegnehmen
+      knopfHerz.addEventListener("click", function () {
+        const herzen = ladeStimmen(post.id + "-herz");
+        if (herzen[benutzername]) {
+          delete herzen[benutzername];
+        } else {
+          herzen[benutzername] = true;
+        }
+        speichereStimmen(post.id + "-herz", herzen);
+        zeigeHerz();
+      });
+      zeigeHerz();
+
       // 3. Die Kommentare
       const liste = document.createElement("ul");
       liste.className = "kommentare";
@@ -136,6 +199,22 @@
       } catch (e) {
         return [];
       }
+    }
+
+    // Daumen-Stimmen werden vorerst auch nur in diesem Browser gespeichert.
+    // So sieht das aus: { "Anna": "hoch", "Ben": "runter" }
+    function ladeStimmen(postId) {
+      try {
+        return JSON.parse(localStorage.getItem("stimmen-" + postId)) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function speichereStimmen(postId, stimmen) {
+      try {
+        localStorage.setItem("stimmen-" + postId, JSON.stringify(stimmen));
+      } catch (e) {}
     }
 
     function speichereKommentar(postId, kommentar) {
