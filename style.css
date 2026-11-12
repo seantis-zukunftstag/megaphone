@@ -412,7 +412,8 @@ h1 {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 
-/* "3 Abonnenten" klein und grau unter dem Hundenamen */
+/* "5 Posts" und "3 Abonnenten" klein und grau unter dem Hundenamen */
+.anzahl-posts,
 .abonnenten {
   display: block;
   color: #888888;

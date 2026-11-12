@@ -11,7 +11,7 @@
   <title>Unsere Hunde</title>
   <!-- "?v=10": Wenn ihr style.css ändert und hochladet, erhöht die Zahl (v=11, v=12 ...).
        Dann holt jedes Handy sicher die neue Version und nicht eine alte, gespeicherte. -->
-  <link rel="stylesheet" href="style.css?v=13">
+  <link rel="stylesheet" href="style.css?v=14">
 
   <!-- Damit man die Seite als App installieren kann (PWA) -->
   <link rel="manifest" href="manifest.json?v=2">
@@ -92,6 +92,13 @@
         anzahlAbonnenten[zahl.hund_id] = zahl.anzahl;
       }
 
+      // Wie viele Posts hat jeder Hund? Wir holen von allen Posts nur den Hund und zählen.
+      const anzahlPosts = {}; // Hund-ID → wie viele Posts
+      const { data: allePosts } = await db.from("posts").select("hund_id");
+      for (const post of allePosts || []) {
+        anzahlPosts[post.hund_id] = (anzahlPosts[post.hund_id] || 0) + 1;
+      }
+
       // Den eigenen Hund ganz nach oben
       hunde.sort(function (a, b) {
         return (b.besitzer === meineId) - (a.besitzer === meineId);
@@ -119,9 +126,16 @@
         abonnenten.className = "abonnenten";
         zeigeAbonnenten(abonnenten, hund.id);
 
-        // Name und Abonnenten untereinander
+        // Klein unter dem Namen: "5 Posts"
+        const posts = document.createElement("span");
+        posts.className = "anzahl-posts";
+        const postZahl = anzahlPosts[hund.id] || 0;
+        posts.textContent = postZahl === 1 ? "1 Post" : postZahl + " Posts";
+
+        // Name, Posts und Abonnenten untereinander
         const text = document.createElement("div");
         text.appendChild(name);
+        text.appendChild(posts);
         text.appendChild(abonnenten);
 
         link.appendChild(bild);

@@ -8,7 +8,7 @@
 // Wenn ihr neue Seiten oder Bilder hinzufügt, die sofort offline gehen sollen:
 // in die Liste DATEIEN eintragen und die Versionsnummer erhöhen.
 
-const VERSION = "megaphone-v7";
+const VERSION = "megaphone-v8";
 
 // Diese Dateien werden gleich beim Installieren gespeichert.
 // (Die Fotos und Daten kommen aus Supabase und werden hier nicht gespeichert.)
@@ -18,7 +18,7 @@ const DATEIEN = [
   "anmelden.html",
   "profil.html",
   "mein-profil.html",
-  "style.css?v=13",
+  "style.css?v=14",
   "app.js?v=2",
   "db.js?v=2",
   "lib/supabase-2.45.4.js",
